@@ -9,9 +9,10 @@ from io import BytesIO
 from typing import Optional, List
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query, Body
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi import FastAPI, HTTPException, Query, Body, Request
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .models import (
     ImageConfig, BatchConfig, BatchTextReplaceConfig,
@@ -45,8 +46,34 @@ generator = PNGGenerator()
 # 默认输出目录
 DEFAULT_OUTPUT_DIR = str(Path(__file__).parent.parent / "output")
 
+# 静态文件目录
+STATIC_DIR = Path(__file__).parent.parent / "static"
 
-@app.get("/", response_model=HealthResponse)
+# 挂载静态文件（放在API路由定义之后）
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+@app.get("/", response_class=HTMLResponse)
+async def serve_frontend():
+    """
+    服务前端界面
+    """
+    index_path = STATIC_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path), media_type="text/html")
+    else:
+        return HTMLResponse(content="""
+        <html>
+            <head><title>PNG Generator</title></head>
+            <body>
+                <h1>PNG Batch Generator API</h1>
+                <p>前端文件未找到，请访问 <a href="/docs">/docs</a> 查看API文档</p>
+            </body>
+        </html>
+        """)
+
+
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     """健康检查端点"""
