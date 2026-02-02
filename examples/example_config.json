@@ -1,0 +1,109 @@
+{
+  "canvas": {
+    "width": 1080,
+    "height": 1920,
+    "background_color": null
+  },
+  "title_primary": {
+    "text": "小鹏P7+挑战多米诺车位",
+    "font_family": "msyh",
+    "font_size": 64,
+    "font_weight": "bold",
+    "color": "#FF6600",
+    "position_x": null,
+    "position_y": 100,
+    "align": "center",
+    "line_height": 1.5,
+    "max_width": 900,
+    "stroke": {
+      "enabled": false,
+      "color": "#000000",
+      "width": 2
+    },
+    "shadow": {
+      "enabled": false,
+      "color": "#000000",
+      "offset_x": 2,
+      "offset_y": 2,
+      "blur": 0
+    },
+    "background_block": {
+      "enabled": false,
+      "color": "#FFFFFF",
+      "opacity": 200,
+      "padding_x": 20,
+      "padding_y": 10,
+      "border_radius": 10
+    },
+    "italic": false
+  },
+  "title_secondary": {
+    "text": "从一穷二白到反客为主\n只用了几十年",
+    "font_family": "msyh",
+    "font_size": 52,
+    "font_weight": "bold",
+    "color": "#1E90FF",
+    "position_x": null,
+    "position_y": 200,
+    "align": "center",
+    "line_height": 1.5,
+    "max_width": 900,
+    "stroke": {
+      "enabled": false,
+      "color": "#000000",
+      "width": 2
+    },
+    "shadow": {
+      "enabled": false,
+      "color": "#000000",
+      "offset_x": 2,
+      "offset_y": 2,
+      "blur": 0
+    },
+    "background_block": {
+      "enabled": false,
+      "color": "#FFFFFF",
+      "opacity": 200,
+      "padding_x": 20,
+      "padding_y": 10,
+      "border_radius": 10
+    },
+    "italic": true
+  },
+  "title_tertiary": null,
+  "body_text": {
+    "text": "以前觉得这种高科技离我们很远，\n现在看着老外惊叹的表情，\n才发现轻舟已过万重山了。",
+    "font_family": "msyh",
+    "font_size": 42,
+    "font_weight": "normal",
+    "color": "#FF6600",
+    "position_x": null,
+    "position_y": 1400,
+    "align": "center",
+    "line_height": 1.5,
+    "max_width": 900,
+    "stroke": {
+      "enabled": false,
+      "color": "#000000",
+      "width": 2
+    },
+    "shadow": {
+      "enabled": false,
+      "color": "#000000",
+      "offset_x": 2,
+      "offset_y": 2,
+      "blur": 0
+    },
+    "background_block": {
+      "enabled": false,
+      "color": "#FFFFFF",
+      "opacity": 200,
+      "padding_x": 20,
+      "padding_y": 10,
+      "border_radius": 10
+    },
+    "italic": true
+  },
+  "custom_texts": [],
+  "output_filename": "example_output.png"
+}

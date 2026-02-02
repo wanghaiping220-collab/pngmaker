@@ -1,0 +1,79 @@
+{
+  "_comment": "这是一个 n8n 工作流示例，展示如何调用 PNG Generator API",
+  "workflow_description": "n8n 调用 PNG Generator API 的示例",
+  "http_request_node": {
+    "method": "POST",
+    "url": "http://localhost:8000/generate",
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "canvas": {
+        "width": 1080,
+        "height": 1920,
+        "background_color": null
+      },
+      "title_primary": {
+        "text": "{{ $json.title }}",
+        "font_family": "msyh",
+        "font_size": 64,
+        "font_weight": "bold",
+        "color": "#FF6600",
+        "position_y": 100,
+        "align": "center"
+      },
+      "title_secondary": {
+        "text": "{{ $json.subtitle }}",
+        "font_family": "msyh",
+        "font_size": 52,
+        "color": "#1E90FF",
+        "position_y": 200,
+        "align": "center",
+        "italic": true
+      },
+      "body_text": {
+        "text": "{{ $json.body }}",
+        "font_family": "msyh",
+        "font_size": 42,
+        "color": "#FF6600",
+        "position_y": 1400,
+        "align": "center",
+        "italic": true
+      },
+      "output_filename": "{{ $json.filename }}"
+    }
+  },
+  "simple_api_call": {
+    "_comment": "使用简化API（通过URL参数）",
+    "method": "POST",
+    "url": "http://localhost:8000/generate/simple",
+    "query_params": {
+      "title_primary_text": "{{ $json.title }}",
+      "title_secondary_text": "{{ $json.subtitle }}",
+      "body_text": "{{ $json.body }}",
+      "output_filename": "{{ $json.filename }}",
+      "return_base64": true
+    }
+  },
+  "batch_api_call": {
+    "_comment": "批量生成API调用",
+    "method": "POST",
+    "url": "http://localhost:8000/generate/batch/template",
+    "body": {
+      "template": {
+        "canvas": {
+          "width": 1080,
+          "height": 1920
+        },
+        "title_primary": {
+          "text": "模板",
+          "font_size": 64,
+          "color": "#FF6600",
+          "position_y": 100
+        }
+      },
+      "replacements": "{{ $json.items }}",
+      "output_dir": "output"
+    }
+  }
+}

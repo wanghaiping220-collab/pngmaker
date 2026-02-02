@@ -1,0 +1,59 @@
+{
+  "template": {
+    "canvas": {
+      "width": 1080,
+      "height": 1920,
+      "background_color": null
+    },
+    "title_primary": {
+      "text": "模板标题",
+      "font_family": "msyh",
+      "font_size": 64,
+      "font_weight": "bold",
+      "color": "#FF6600",
+      "position_y": 100,
+      "align": "center"
+    },
+    "title_secondary": {
+      "text": "模板副标题",
+      "font_family": "msyh",
+      "font_size": 52,
+      "color": "#1E90FF",
+      "position_y": 200,
+      "align": "center",
+      "italic": true
+    },
+    "body_text": {
+      "text": "模板正文内容",
+      "font_family": "msyh",
+      "font_size": 42,
+      "color": "#FF6600",
+      "position_y": 1400,
+      "align": "center",
+      "italic": true
+    },
+    "output_filename": "template_output.png"
+  },
+  "replacements": [
+    {
+      "title_primary.text": "新能源汽车崛起",
+      "title_secondary.text": "中国制造的骄傲",
+      "body_text.text": "从追赶者到领跑者，\n中国新能源汽车产业的华丽转身。",
+      "output_filename": "ev_001.png"
+    },
+    {
+      "title_primary.text": "5G技术领先",
+      "title_secondary.text": "通信产业新高度",
+      "body_text.text": "5G时代，\n中国正在书写通信产业的新篇章。",
+      "output_filename": "5g_001.png"
+    },
+    {
+      "title_primary.text": "人工智能发展",
+      "title_secondary.text": "科技创新引领未来",
+      "body_text.text": "AI赋能千行百业，\n智能化浪潮席卷全球。",
+      "output_filename": "ai_001.png"
+    }
+  ],
+  "output_dir": "output",
+  "filename_prefix": "template_"
+}

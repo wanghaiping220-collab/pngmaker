@@ -1,0 +1,83 @@
+{
+  "images": [
+    {
+      "canvas": {
+        "width": 1080,
+        "height": 1920,
+        "background_color": null
+      },
+      "title_primary": {
+        "text": "第一张图片标题",
+        "font_family": "msyh",
+        "font_size": 64,
+        "font_weight": "bold",
+        "color": "#FF6600",
+        "position_y": 100,
+        "align": "center"
+      },
+      "title_secondary": {
+        "text": "第一张图片副标题",
+        "font_family": "msyh",
+        "font_size": 52,
+        "color": "#1E90FF",
+        "position_y": 200,
+        "align": "center",
+        "italic": true
+      },
+      "output_filename": "batch_001.png"
+    },
+    {
+      "canvas": {
+        "width": 1080,
+        "height": 1920,
+        "background_color": null
+      },
+      "title_primary": {
+        "text": "第二张图片标题",
+        "font_family": "msyh",
+        "font_size": 64,
+        "font_weight": "bold",
+        "color": "#FF6600",
+        "position_y": 100,
+        "align": "center"
+      },
+      "title_secondary": {
+        "text": "第二张图片副标题",
+        "font_family": "msyh",
+        "font_size": 52,
+        "color": "#1E90FF",
+        "position_y": 200,
+        "align": "center",
+        "italic": true
+      },
+      "output_filename": "batch_002.png"
+    },
+    {
+      "canvas": {
+        "width": 1080,
+        "height": 1920,
+        "background_color": null
+      },
+      "title_primary": {
+        "text": "第三张图片标题",
+        "font_family": "msyh",
+        "font_size": 64,
+        "font_weight": "bold",
+        "color": "#FF6600",
+        "position_y": 100,
+        "align": "center"
+      },
+      "title_secondary": {
+        "text": "第三张图片副标题",
+        "font_family": "msyh",
+        "font_size": 52,
+        "color": "#1E90FF",
+        "position_y": 200,
+        "align": "center",
+        "italic": true
+      },
+      "output_filename": "batch_003.png"
+    }
+  ],
+  "output_dir": "output"
+}
