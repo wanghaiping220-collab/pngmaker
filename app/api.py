@@ -527,3 +527,324 @@ async def list_files():
 
     files = [f for f in os.listdir(DEFAULT_OUTPUT_DIR) if f.endswith(".png")]
     return JSONResponse({"files": files, "output_dir": DEFAULT_OUTPUT_DIR})
+
+
+# ==================== 字体管理 API ====================
+
+@app.get("/fonts/scan")
+async def scan_fonts():
+    """
+    扫描系统中所有可用字体
+
+    返回系统字体和自定义字体目录中的所有字体
+    """
+    from .generator import FontManager
+    import platform
+
+    fm = FontManager()
+    fonts = []
+    seen_fonts = set()
+
+    # 获取系统字体路径
+    system = platform.system()
+    font_paths = fm._get_system_font_paths()
+
+    for font_path in font_paths:
+        if not os.path.exists(font_path):
+            continue
+        try:
+            for root, _, files in os.walk(font_path):
+                for file in files:
+                    if file.lower().endswith(('.ttf', '.ttc', '.otf')):
+                        full_path = os.path.join(root, file)
+                        font_name = os.path.splitext(file)[0]
+
+                        # 避免重复
+                        if font_name.lower() in seen_fonts:
+                            continue
+                        seen_fonts.add(font_name.lower())
+
+                        # 判断字体类型
+                        is_cjk = any(keyword in file.lower() for keyword in
+                                    ['cjk', 'chinese', 'yahei', 'simhei', 'simsun',
+                                     'kaiti', 'fangsong', 'noto', 'source', 'pingfang',
+                                     'hiragino', 'heiti', 'songti', 'ming', 'gothic'])
+
+                        fonts.append({
+                            "name": font_name,
+                            "file": file,
+                            "path": full_path,
+                            "is_cjk": is_cjk,
+                            "source": "custom" if font_path == fm.custom_font_dir else "system"
+                        })
+        except PermissionError:
+            continue
+
+    # 按名称排序，CJK字体优先
+    fonts.sort(key=lambda x: (not x['is_cjk'], x['name'].lower()))
+
+    return JSONResponse({
+        "fonts": fonts,
+        "total": len(fonts),
+        "custom_font_dir": fm.custom_font_dir,
+        "system": system
+    })
+
+
+# ==================== 模板管理 API ====================
+
+TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
+
+
+@app.get("/templates/presets")
+async def get_preset_templates():
+    """
+    获取预设模板列表
+    """
+    presets_file = TEMPLATES_DIR / "presets.json"
+    if presets_file.exists():
+        with open(presets_file, "r", encoding="utf-8") as f:
+            presets = json.load(f)
+        return JSONResponse(presets)
+    return JSONResponse({"presets": []})
+
+
+@app.get("/templates/safezones")
+async def get_safe_zones():
+    """
+    获取各平台安全区配置
+
+    返回抖音、视频号、小红书等平台的安全区域配置
+    """
+    safe_zones = {
+        "platforms": {
+            "douyin": {
+                "name": "抖音",
+                "canvas": {"width": 1080, "height": 1920},
+                "zones": {
+                    "top_bar": {"top": 0, "height": 120, "description": "状态栏+导航栏"},
+                    "title_area": {"top": 120, "height": 80, "description": "标题区域"},
+                    "bottom_bar": {"bottom": 0, "height": 280, "description": "评论/互动栏"},
+                    "right_icons": {"right": 0, "width": 80, "height": 400, "bottom": 300, "description": "右侧图标"},
+                    "safe_area": {"top": 200, "bottom": 300, "left": 40, "right": 100, "description": "安全区域"}
+                }
+            },
+            "shipinhao": {
+                "name": "视频号",
+                "canvas": {"width": 1080, "height": 1920},
+                "zones": {
+                    "top_bar": {"top": 0, "height": 100, "description": "状态栏"},
+                    "account_info": {"top": 100, "height": 120, "description": "账号信息"},
+                    "bottom_bar": {"bottom": 0, "height": 320, "description": "底部互动栏"},
+                    "right_icons": {"right": 0, "width": 70, "height": 350, "bottom": 350, "description": "右侧图标"},
+                    "safe_area": {"top": 220, "bottom": 340, "left": 40, "right": 90, "description": "安全区域"}
+                }
+            },
+            "xiaohongshu": {
+                "name": "小红书",
+                "canvas": {"width": 1080, "height": 1440},
+                "zones": {
+                    "top_bar": {"top": 0, "height": 90, "description": "状态栏"},
+                    "title_area": {"top": 90, "height": 100, "description": "标题区域"},
+                    "bottom_bar": {"bottom": 0, "height": 200, "description": "底部互动栏"},
+                    "safe_area": {"top": 190, "bottom": 220, "left": 40, "right": 40, "description": "安全区域"}
+                }
+            },
+            "kuaishou": {
+                "name": "快手",
+                "canvas": {"width": 1080, "height": 1920},
+                "zones": {
+                    "top_bar": {"top": 0, "height": 110, "description": "状态栏"},
+                    "bottom_bar": {"bottom": 0, "height": 300, "description": "底部互动栏"},
+                    "right_icons": {"right": 0, "width": 90, "height": 380, "bottom": 320, "description": "右侧图标"},
+                    "safe_area": {"top": 150, "bottom": 320, "left": 40, "right": 110, "description": "安全区域"}
+                }
+            },
+            "bilibili": {
+                "name": "B站",
+                "canvas": {"width": 1080, "height": 1920},
+                "zones": {
+                    "top_bar": {"top": 0, "height": 100, "description": "状态栏"},
+                    "danmaku_area": {"top": 100, "height": 150, "description": "弹幕区域"},
+                    "bottom_bar": {"bottom": 0, "height": 260, "description": "底部栏"},
+                    "right_icons": {"right": 0, "width": 75, "height": 320, "bottom": 280, "description": "右侧图标"},
+                    "safe_area": {"top": 250, "bottom": 280, "left": 40, "right": 95, "description": "安全区域"}
+                }
+            },
+            "instagram_story": {
+                "name": "Instagram Stories",
+                "canvas": {"width": 1080, "height": 1920},
+                "zones": {
+                    "top_bar": {"top": 0, "height": 150, "description": "状态栏+用户信息"},
+                    "bottom_bar": {"bottom": 0, "height": 180, "description": "底部互动栏"},
+                    "safe_area": {"top": 170, "bottom": 200, "left": 40, "right": 40, "description": "安全区域"}
+                }
+            },
+            "instagram_reels": {
+                "name": "Instagram Reels",
+                "canvas": {"width": 1080, "height": 1920},
+                "zones": {
+                    "top_bar": {"top": 0, "height": 120, "description": "状态栏"},
+                    "bottom_bar": {"bottom": 0, "height": 280, "description": "底部信息栏"},
+                    "right_icons": {"right": 0, "width": 80, "height": 400, "bottom": 300, "description": "右侧图标"},
+                    "safe_area": {"top": 140, "bottom": 300, "left": 40, "right": 100, "description": "安全区域"}
+                }
+            },
+            "tiktok": {
+                "name": "TikTok",
+                "canvas": {"width": 1080, "height": 1920},
+                "zones": {
+                    "top_bar": {"top": 0, "height": 130, "description": "状态栏+搜索"},
+                    "bottom_bar": {"bottom": 0, "height": 280, "description": "底部信息栏"},
+                    "right_icons": {"right": 0, "width": 85, "height": 420, "bottom": 300, "description": "右侧图标"},
+                    "safe_area": {"top": 150, "bottom": 300, "left": 40, "right": 105, "description": "安全区域"}
+                }
+            },
+            "youtube_shorts": {
+                "name": "YouTube Shorts",
+                "canvas": {"width": 1080, "height": 1920},
+                "zones": {
+                    "top_bar": {"top": 0, "height": 100, "description": "状态栏"},
+                    "bottom_bar": {"bottom": 0, "height": 320, "description": "底部信息栏"},
+                    "right_icons": {"right": 0, "width": 70, "height": 350, "bottom": 340, "description": "右侧图标"},
+                    "safe_area": {"top": 120, "bottom": 340, "left": 40, "right": 90, "description": "安全区域"}
+                }
+            },
+            "wechat_moments": {
+                "name": "微信朋友圈",
+                "canvas": {"width": 1080, "height": 1080},
+                "zones": {
+                    "safe_area": {"top": 40, "bottom": 40, "left": 40, "right": 40, "description": "安全区域"}
+                }
+            }
+        }
+    }
+    return JSONResponse(safe_zones)
+
+
+@app.post("/templates/save")
+async def save_template(template_data: dict = Body(...)):
+    """
+    保存模板到服务器
+
+    - **template_data**: 包含 name 和 config 的模板数据
+    """
+    try:
+        TEMPLATES_DIR.mkdir(exist_ok=True)
+
+        name = template_data.get("name", "untitled")
+        config = template_data.get("config", {})
+
+        # 生成安全的文件名
+        safe_name = "".join(c for c in name if c.isalnum() or c in ('_', '-', ' ')).strip()
+        safe_name = safe_name.replace(' ', '_')
+        filename = f"{safe_name}_{int(os.urandom(4).hex(), 16)}.json"
+
+        template_path = TEMPLATES_DIR / filename
+
+        with open(template_path, "w", encoding="utf-8") as f:
+            json.dump({
+                "name": name,
+                "config": config,
+                "created_at": str(Path(template_path).stat().st_mtime if template_path.exists() else "")
+            }, f, ensure_ascii=False, indent=2)
+
+        return JSONResponse({
+            "success": True,
+            "message": "模板保存成功",
+            "filename": filename
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/templates/list")
+async def list_templates():
+    """
+    列出所有已保存的模板
+    """
+    TEMPLATES_DIR.mkdir(exist_ok=True)
+
+    templates = []
+    for file in TEMPLATES_DIR.glob("*.json"):
+        if file.name == "presets.json":
+            continue
+        try:
+            with open(file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                templates.append({
+                    "filename": file.name,
+                    "name": data.get("name", file.stem),
+                    "created_at": data.get("created_at", "")
+                })
+        except:
+            continue
+
+    return JSONResponse({"templates": templates})
+
+
+@app.get("/templates/{filename}")
+async def get_template(filename: str):
+    """
+    获取指定模板
+    """
+    template_path = TEMPLATES_DIR / filename
+    if not template_path.exists():
+        raise HTTPException(status_code=404, detail="模板不存在")
+
+    with open(template_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    return JSONResponse(data)
+
+
+@app.delete("/templates/{filename}")
+async def delete_template(filename: str):
+    """
+    删除指定模板
+    """
+    template_path = TEMPLATES_DIR / filename
+    if not template_path.exists():
+        raise HTTPException(status_code=404, detail="模板不存在")
+
+    os.remove(template_path)
+    return JSONResponse({"success": True, "message": "模板已删除"})
+
+
+@app.post("/templates/upload")
+async def upload_template(template_data: dict = Body(...)):
+    """
+    上传模板（从JSON导入）
+    """
+    try:
+        TEMPLATES_DIR.mkdir(exist_ok=True)
+
+        name = template_data.get("name", "imported_template")
+        config = template_data.get("config", template_data)
+
+        # 如果直接传入的是配置而不是包装的对象
+        if "canvas" in template_data and "name" not in template_data:
+            config = template_data
+            name = "imported_template"
+
+        safe_name = "".join(c for c in name if c.isalnum() or c in ('_', '-', ' ')).strip()
+        safe_name = safe_name.replace(' ', '_') or "imported"
+        filename = f"{safe_name}_{int(os.urandom(4).hex(), 16)}.json"
+
+        template_path = TEMPLATES_DIR / filename
+
+        with open(template_path, "w", encoding="utf-8") as f:
+            json.dump({
+                "name": name,
+                "config": config,
+                "created_at": ""
+            }, f, ensure_ascii=False, indent=2)
+
+        return JSONResponse({
+            "success": True,
+            "message": "模板上传成功",
+            "filename": filename,
+            "name": name
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

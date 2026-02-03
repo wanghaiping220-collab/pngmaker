@@ -15,6 +15,7 @@ const state = {
         font: 'msyh',
         size: 64,
         color: '#FF6600',
+        x: null,
         y: 100,
         align: 'center',
         bold: true,
@@ -29,6 +30,7 @@ const state = {
         font: 'msyh',
         size: 52,
         color: '#1E90FF',
+        x: null,
         y: 200,
         align: 'center',
         bold: true,
@@ -43,6 +45,7 @@ const state = {
         font: 'msyh',
         size: 42,
         color: '#1E90FF',
+        x: null,
         y: 350,
         align: 'center',
         bold: false,
@@ -57,6 +60,7 @@ const state = {
         font: 'msyh',
         size: 42,
         color: '#FF6600',
+        x: null,
         y: 1400,
         align: 'center',
         bold: false,
@@ -71,7 +75,128 @@ const state = {
     zoom: 0.5,
     batchData: [],
     templates: [],
-    history: []
+    presetTemplates: [],
+    systemFonts: [],
+    history: [],
+    safeZone: {
+        enabled: false,
+        platform: 'douyin',
+        config: null
+    }
+};
+
+// Safe zone configurations
+const SAFE_ZONES = {
+    douyin: {
+        name: '抖音',
+        width: 1080,
+        height: 1920,
+        topBar: 150,
+        bottomBar: 200,
+        rightIcons: 100,
+        safeTop: 200,
+        safeBottom: 300,
+        safeRight: 120
+    },
+    shipinhao: {
+        name: '视频号',
+        width: 1080,
+        height: 1920,
+        topBar: 120,
+        bottomBar: 180,
+        rightIcons: 80,
+        safeTop: 180,
+        safeBottom: 280,
+        safeRight: 100
+    },
+    xiaohongshu: {
+        name: '小红书',
+        width: 1080,
+        height: 1440,
+        topBar: 100,
+        bottomBar: 160,
+        rightIcons: 60,
+        safeTop: 150,
+        safeBottom: 220,
+        safeRight: 80
+    },
+    kuaishou: {
+        name: '快手',
+        width: 1080,
+        height: 1920,
+        topBar: 140,
+        bottomBar: 190,
+        rightIcons: 90,
+        safeTop: 190,
+        safeBottom: 290,
+        safeRight: 110
+    },
+    bilibili: {
+        name: 'B站',
+        width: 1080,
+        height: 1920,
+        topBar: 130,
+        bottomBar: 170,
+        rightIcons: 70,
+        safeTop: 180,
+        safeBottom: 250,
+        safeRight: 90
+    },
+    tiktok: {
+        name: 'TikTok',
+        width: 1080,
+        height: 1920,
+        topBar: 150,
+        bottomBar: 200,
+        rightIcons: 100,
+        safeTop: 200,
+        safeBottom: 300,
+        safeRight: 120
+    },
+    instagram_story: {
+        name: 'Instagram Story',
+        width: 1080,
+        height: 1920,
+        topBar: 120,
+        bottomBar: 150,
+        rightIcons: 60,
+        safeTop: 180,
+        safeBottom: 220,
+        safeRight: 80
+    },
+    instagram_post: {
+        name: 'Instagram Post',
+        width: 1080,
+        height: 1080,
+        topBar: 0,
+        bottomBar: 100,
+        rightIcons: 0,
+        safeTop: 50,
+        safeBottom: 150,
+        safeRight: 50
+    },
+    youtube_shorts: {
+        name: 'YouTube Shorts',
+        width: 1080,
+        height: 1920,
+        topBar: 100,
+        bottomBar: 200,
+        rightIcons: 80,
+        safeTop: 150,
+        safeBottom: 280,
+        safeRight: 100
+    },
+    wechat_moments: {
+        name: '朋友圈',
+        width: 1080,
+        height: 1440,
+        topBar: 0,
+        bottomBar: 80,
+        rightIcons: 0,
+        safeTop: 50,
+        safeBottom: 120,
+        safeRight: 50
+    }
 };
 
 // ===== API Configuration =====
@@ -85,6 +210,8 @@ const $$ = (selector) => document.querySelectorAll(selector);
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     initCanvasControls();
+    initPlatformPresets();
+    initSafeZoneControls();
     initTextControls();
     initPreviewControls();
     initGenerateControls();
@@ -92,6 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initTemplates();
     initHistory();
     initModals();
+    loadSystemFonts();
+    loadPresetTemplates();
 
     // Initial preview update
     updatePreview();
@@ -132,6 +261,89 @@ function initNavigation() {
     });
 }
 
+// ===== Platform Presets =====
+function initPlatformPresets() {
+    const platformSelect = $('#platformPreset');
+    if (platformSelect) {
+        platformSelect.addEventListener('change', (e) => {
+            const platform = e.target.value;
+            if (SAFE_ZONES[platform]) {
+                const config = SAFE_ZONES[platform];
+                state.canvas.width = config.width;
+                state.canvas.height = config.height;
+                state.safeZone.platform = platform;
+                state.safeZone.config = config;
+
+                // Update UI
+                $('#canvasWidth').value = config.width;
+                $('#canvasHeight').value = config.height;
+                $('#presetSize').value = 'custom';
+
+                updatePreview();
+                updateSafeZoneOverlay();
+            }
+        });
+    }
+}
+
+// ===== Safe Zone Controls =====
+function initSafeZoneControls() {
+    const showSafeZone = $('#showSafeZone');
+    if (showSafeZone) {
+        showSafeZone.addEventListener('change', (e) => {
+            state.safeZone.enabled = e.target.checked;
+            updateSafeZoneOverlay();
+        });
+    }
+
+    // Initialize with default platform
+    state.safeZone.config = SAFE_ZONES['douyin'];
+}
+
+function updateSafeZoneOverlay() {
+    const overlay = $('#safeZoneOverlay');
+    if (!overlay) return;
+
+    if (state.safeZone.enabled && state.safeZone.config) {
+        overlay.classList.add('active');
+        const config = state.safeZone.config;
+        const { width, height } = state.canvas;
+
+        // Calculate percentages for the safe zones
+        const topPercent = (config.safeTop / height) * 100;
+        const bottomPercent = (config.safeBottom / height) * 100;
+        const rightPercent = (config.safeRight / width) * 100;
+
+        // Update safe zone elements
+        const szTop = $('#szTop');
+        const szBottom = $('#szBottom');
+        const szRight = $('#szRight');
+
+        if (szTop) {
+            szTop.style.top = '0';
+            szTop.style.left = '0';
+            szTop.style.right = '0';
+            szTop.style.height = `${topPercent}%`;
+        }
+
+        if (szBottom) {
+            szBottom.style.bottom = '0';
+            szBottom.style.left = '0';
+            szBottom.style.right = '0';
+            szBottom.style.height = `${bottomPercent}%`;
+        }
+
+        if (szRight) {
+            szRight.style.top = `${topPercent}%`;
+            szRight.style.right = '0';
+            szRight.style.width = `${rightPercent}%`;
+            szRight.style.bottom = `${bottomPercent}%`;
+        }
+    } else {
+        overlay.classList.remove('active');
+    }
+}
+
 // ===== Canvas Controls =====
 function initCanvasControls() {
     // Width & Height
@@ -139,12 +351,14 @@ function initCanvasControls() {
         state.canvas.width = parseInt(e.target.value) || 1080;
         $('#presetSize').value = 'custom';
         updatePreview();
+        updateSafeZoneOverlay();
     });
 
     $('#canvasHeight').addEventListener('input', (e) => {
         state.canvas.height = parseInt(e.target.value) || 1920;
         $('#presetSize').value = 'custom';
         updatePreview();
+        updateSafeZoneOverlay();
     });
 
     // Preset sizes
@@ -156,6 +370,7 @@ function initCanvasControls() {
             $('#canvasWidth').value = w;
             $('#canvasHeight').value = h;
             updatePreview();
+            updateSafeZoneOverlay();
         }
     });
 
@@ -180,6 +395,195 @@ function initCanvasControls() {
         state.canvas.backgroundColor = e.target.value;
         updatePreview();
     });
+}
+
+// ===== System Fonts =====
+async function loadSystemFonts() {
+    try {
+        const response = await fetch(`${API_BASE}/fonts/scan`);
+        const data = await response.json();
+
+        if (data.fonts && data.fonts.length > 0) {
+            state.systemFonts = data.fonts;
+            updateFontSelects();
+        }
+    } catch (error) {
+        console.error('Failed to load system fonts:', error);
+    }
+}
+
+function updateFontSelects() {
+    const sections = ['primary', 'secondary', 'tertiary', 'body'];
+
+    sections.forEach(section => {
+        const select = $(`#${section}Font`);
+        if (!select) return;
+
+        // Clear existing options except built-in ones
+        const builtInOptions = select.querySelectorAll('optgroup:first-child option, option:not(optgroup option)');
+
+        // Add system fonts optgroup
+        let systemGroup = select.querySelector('optgroup[label="系统字体"]');
+        if (!systemGroup) {
+            systemGroup = document.createElement('optgroup');
+            systemGroup.label = '系统字体';
+            select.appendChild(systemGroup);
+        }
+
+        // Clear and repopulate system fonts
+        systemGroup.innerHTML = '';
+
+        // Separate CJK and other fonts
+        const cjkFonts = state.systemFonts.filter(f => f.has_cjk);
+        const otherFonts = state.systemFonts.filter(f => !f.has_cjk);
+
+        // Add CJK fonts first
+        if (cjkFonts.length > 0) {
+            const cjkGroup = document.createElement('optgroup');
+            cjkGroup.label = '中文字体';
+            cjkFonts.forEach(font => {
+                const option = document.createElement('option');
+                option.value = font.path;
+                option.textContent = font.name;
+                cjkGroup.appendChild(option);
+            });
+            select.appendChild(cjkGroup);
+        }
+
+        // Add other fonts
+        if (otherFonts.length > 0) {
+            const otherGroup = document.createElement('optgroup');
+            otherGroup.label = '其他字体';
+            otherFonts.forEach(font => {
+                const option = document.createElement('option');
+                option.value = font.path;
+                option.textContent = font.name;
+                otherGroup.appendChild(option);
+            });
+            select.appendChild(otherGroup);
+        }
+    });
+}
+
+// ===== Preset Templates =====
+async function loadPresetTemplates() {
+    try {
+        const response = await fetch(`${API_BASE}/templates/presets`);
+        const data = await response.json();
+
+        if (data.presets && data.presets.length > 0) {
+            state.presetTemplates = data.presets;
+            renderPresetTemplates();
+        }
+    } catch (error) {
+        console.error('Failed to load preset templates:', error);
+    }
+}
+
+function renderPresetTemplates() {
+    const container = $('#presetList');
+    if (!container) return;
+
+    if (state.presetTemplates.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无预设模板</div>';
+        return;
+    }
+
+    container.innerHTML = state.presetTemplates.map((preset, index) => `
+        <div class="preset-item" onclick="applyPresetTemplate(${index})">
+            <div class="preset-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <line x1="9" y1="9" x2="15" y2="9"/>
+                    <line x1="9" y1="13" x2="15" y2="13"/>
+                </svg>
+            </div>
+            <div class="preset-info">
+                <div class="preset-name">${preset.name}</div>
+                <div class="preset-desc">${preset.description || ''}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.applyPresetTemplate = function(index) {
+    const preset = state.presetTemplates[index];
+    if (!preset || !preset.config) return;
+
+    const config = preset.config;
+
+    // Apply canvas settings
+    if (config.canvas) {
+        state.canvas.width = config.canvas.width || 1080;
+        state.canvas.height = config.canvas.height || 1920;
+        state.canvas.backgroundColor = config.canvas.background_color || null;
+    }
+
+    // Apply text sections
+    applyPresetTextConfig('primary', config.title_primary);
+    applyPresetTextConfig('secondary', config.title_secondary);
+    applyPresetTextConfig('tertiary', config.title_tertiary);
+    applyPresetTextConfig('body', config.body_text);
+
+    // Update UI
+    syncUIFromState();
+    updatePreview();
+
+    // Switch to single tab
+    const singleTab = $('.nav-item[data-tab="single"]');
+    if (singleTab) singleTab.click();
+
+    showToast(`已应用预设: ${preset.name}`, 'success');
+};
+
+function applyPresetTextConfig(section, config) {
+    if (!config) {
+        state[section].enabled = false;
+        return;
+    }
+
+    state[section].enabled = true;
+    state[section].text = config.text || '';
+    state[section].font = config.font_family || 'msyh';
+    state[section].size = config.font_size || 48;
+    state[section].color = config.color || '#000000';
+    state[section].x = config.position_x || null;
+    state[section].y = config.position_y || 100;
+    state[section].align = config.align || 'center';
+    state[section].bold = config.font_weight === 'bold';
+    state[section].italic = config.italic || false;
+
+    // Stroke
+    if (config.stroke) {
+        state[section].stroke = {
+            enabled: config.stroke.enabled || false,
+            color: config.stroke.color || '#000000',
+            width: config.stroke.width || 2
+        };
+    }
+
+    // Shadow
+    if (config.shadow) {
+        state[section].shadow = {
+            enabled: config.shadow.enabled || false,
+            color: config.shadow.color || '#333333',
+            blur: config.shadow.blur || 2,
+            x: config.shadow.offset_x || 3,
+            y: config.shadow.offset_y || 3
+        };
+    }
+
+    // Background block
+    if (config.background_block) {
+        state[section].bgBlock = {
+            enabled: config.background_block.enabled || false,
+            color: config.background_block.color || '#FFFF00',
+            opacity: config.background_block.opacity || 200,
+            paddingX: config.background_block.padding_x || 20,
+            paddingY: config.background_block.padding_y || 10,
+            radius: config.background_block.border_radius || 8
+        };
+    }
 }
 
 // ===== Text Controls =====
@@ -244,6 +648,16 @@ function initTextControls() {
             });
         }
 
+        // X position
+        const xInput = $(`#${section}X`);
+        if (xInput) {
+            xInput.addEventListener('input', (e) => {
+                const val = e.target.value.trim();
+                state[section].x = val === '' ? null : parseInt(val);
+                updatePreview();
+            });
+        }
+
         // Y position
         const yInput = $(`#${section}Y`);
         if (yInput) {
@@ -273,129 +687,131 @@ function initTextControls() {
             });
         });
 
-        // Advanced effects - Primary section only for now
-        if (section === 'primary') {
-            // Stroke
-            const strokeEnabled = $(`#${section}StrokeEnabled`);
-            if (strokeEnabled) {
-                strokeEnabled.addEventListener('change', (e) => {
-                    state[section].stroke.enabled = e.target.checked;
-                    updatePreview();
-                });
-            }
-
-            const strokeColor = $(`#${section}StrokeColor`);
-            if (strokeColor) {
-                strokeColor.addEventListener('input', (e) => {
-                    state[section].stroke.color = e.target.value;
-                    updatePreview();
-                });
-            }
-
-            const strokeWidth = $(`#${section}StrokeWidth`);
-            if (strokeWidth) {
-                strokeWidth.addEventListener('input', (e) => {
-                    state[section].stroke.width = parseInt(e.target.value) || 2;
-                    updatePreview();
-                });
-            }
-
-            // Shadow
-            const shadowEnabled = $(`#${section}ShadowEnabled`);
-            if (shadowEnabled) {
-                shadowEnabled.addEventListener('change', (e) => {
-                    state[section].shadow.enabled = e.target.checked;
-                    updatePreview();
-                });
-            }
-
-            const shadowColor = $(`#${section}ShadowColor`);
-            if (shadowColor) {
-                shadowColor.addEventListener('input', (e) => {
-                    state[section].shadow.color = e.target.value;
-                    updatePreview();
-                });
-            }
-
-            const shadowBlur = $(`#${section}ShadowBlur`);
-            if (shadowBlur) {
-                shadowBlur.addEventListener('input', (e) => {
-                    state[section].shadow.blur = parseInt(e.target.value) || 0;
-                    updatePreview();
-                });
-            }
-
-            const shadowX = $(`#${section}ShadowX`);
-            if (shadowX) {
-                shadowX.addEventListener('input', (e) => {
-                    state[section].shadow.x = parseInt(e.target.value) || 0;
-                    updatePreview();
-                });
-            }
-
-            const shadowY = $(`#${section}ShadowY`);
-            if (shadowY) {
-                shadowY.addEventListener('input', (e) => {
-                    state[section].shadow.y = parseInt(e.target.value) || 0;
-                    updatePreview();
-                });
-            }
-
-            // Background block
-            const bgBlockEnabled = $(`#${section}BgBlockEnabled`);
-            if (bgBlockEnabled) {
-                bgBlockEnabled.addEventListener('change', (e) => {
-                    state[section].bgBlock.enabled = e.target.checked;
-                    updatePreview();
-                });
-            }
-
-            const bgBlockColor = $(`#${section}BgBlockColor`);
-            if (bgBlockColor) {
-                bgBlockColor.addEventListener('input', (e) => {
-                    state[section].bgBlock.color = e.target.value;
-                    updatePreview();
-                });
-            }
-
-            const bgBlockOpacity = $(`#${section}BgBlockOpacity`);
-            if (bgBlockOpacity) {
-                bgBlockOpacity.addEventListener('input', (e) => {
-                    state[section].bgBlock.opacity = parseInt(e.target.value);
-                    updatePreview();
-                });
-            }
-
-            const bgBlockPaddingX = $(`#${section}BgBlockPaddingX`);
-            if (bgBlockPaddingX) {
-                bgBlockPaddingX.addEventListener('input', (e) => {
-                    state[section].bgBlock.paddingX = parseInt(e.target.value) || 0;
-                    updatePreview();
-                });
-            }
-
-            const bgBlockPaddingY = $(`#${section}BgBlockPaddingY`);
-            if (bgBlockPaddingY) {
-                bgBlockPaddingY.addEventListener('input', (e) => {
-                    state[section].bgBlock.paddingY = parseInt(e.target.value) || 0;
-                    updatePreview();
-                });
-            }
-
-            const bgBlockRadius = $(`#${section}BgBlockRadius`);
-            if (bgBlockRadius) {
-                bgBlockRadius.addEventListener('input', (e) => {
-                    state[section].bgBlock.radius = parseInt(e.target.value) || 0;
-                    updatePreview();
-                });
-            }
-        }
+        // Advanced effects - Initialize for ALL sections
+        initAdvancedEffects(section);
     });
 
     // Output filename
     $('#outputFilename').addEventListener('input', (e) => {
         state.output.filename = e.target.value || 'output.png';
     });
+}
+
+function initAdvancedEffects(section) {
+    // Stroke
+    const strokeEnabled = $(`#${section}StrokeEnabled`);
+    if (strokeEnabled) {
+        strokeEnabled.addEventListener('change', (e) => {
+            state[section].stroke.enabled = e.target.checked;
+            updatePreview();
+        });
+    }
+
+    const strokeColor = $(`#${section}StrokeColor`);
+    if (strokeColor) {
+        strokeColor.addEventListener('input', (e) => {
+            state[section].stroke.color = e.target.value;
+            updatePreview();
+        });
+    }
+
+    const strokeWidth = $(`#${section}StrokeWidth`);
+    if (strokeWidth) {
+        strokeWidth.addEventListener('input', (e) => {
+            state[section].stroke.width = parseInt(e.target.value) || 2;
+            updatePreview();
+        });
+    }
+
+    // Shadow
+    const shadowEnabled = $(`#${section}ShadowEnabled`);
+    if (shadowEnabled) {
+        shadowEnabled.addEventListener('change', (e) => {
+            state[section].shadow.enabled = e.target.checked;
+            updatePreview();
+        });
+    }
+
+    const shadowColor = $(`#${section}ShadowColor`);
+    if (shadowColor) {
+        shadowColor.addEventListener('input', (e) => {
+            state[section].shadow.color = e.target.value;
+            updatePreview();
+        });
+    }
+
+    const shadowBlur = $(`#${section}ShadowBlur`);
+    if (shadowBlur) {
+        shadowBlur.addEventListener('input', (e) => {
+            state[section].shadow.blur = parseInt(e.target.value) || 0;
+            updatePreview();
+        });
+    }
+
+    const shadowX = $(`#${section}ShadowX`);
+    if (shadowX) {
+        shadowX.addEventListener('input', (e) => {
+            state[section].shadow.x = parseInt(e.target.value) || 0;
+            updatePreview();
+        });
+    }
+
+    const shadowY = $(`#${section}ShadowY`);
+    if (shadowY) {
+        shadowY.addEventListener('input', (e) => {
+            state[section].shadow.y = parseInt(e.target.value) || 0;
+            updatePreview();
+        });
+    }
+
+    // Background block
+    const bgBlockEnabled = $(`#${section}BgBlockEnabled`);
+    if (bgBlockEnabled) {
+        bgBlockEnabled.addEventListener('change', (e) => {
+            state[section].bgBlock.enabled = e.target.checked;
+            updatePreview();
+        });
+    }
+
+    const bgBlockColor = $(`#${section}BgBlockColor`);
+    if (bgBlockColor) {
+        bgBlockColor.addEventListener('input', (e) => {
+            state[section].bgBlock.color = e.target.value;
+            updatePreview();
+        });
+    }
+
+    const bgBlockOpacity = $(`#${section}BgBlockOpacity`);
+    if (bgBlockOpacity) {
+        bgBlockOpacity.addEventListener('input', (e) => {
+            state[section].bgBlock.opacity = parseInt(e.target.value);
+            updatePreview();
+        });
+    }
+
+    const bgBlockPaddingX = $(`#${section}BgBlockPaddingX`);
+    if (bgBlockPaddingX) {
+        bgBlockPaddingX.addEventListener('input', (e) => {
+            state[section].bgBlock.paddingX = parseInt(e.target.value) || 0;
+            updatePreview();
+        });
+    }
+
+    const bgBlockPaddingY = $(`#${section}BgBlockPaddingY`);
+    if (bgBlockPaddingY) {
+        bgBlockPaddingY.addEventListener('input', (e) => {
+            state[section].bgBlock.paddingY = parseInt(e.target.value) || 0;
+            updatePreview();
+        });
+    }
+
+    const bgBlockRadius = $(`#${section}BgBlockRadius`);
+    if (bgBlockRadius) {
+        bgBlockRadius.addEventListener('input', (e) => {
+            state[section].bgBlock.radius = parseInt(e.target.value) || 0;
+            updatePreview();
+        });
+    }
 }
 
 // ===== Preview Controls =====
@@ -452,6 +868,9 @@ function updatePreview() {
     updateTextPreview('tertiary', '#preview-tertiary');
     updateTextPreview('body', '#preview-body');
 
+    // Update safe zone overlay
+    updateSafeZoneOverlay();
+
     // Auto-fit zoom
     fitPreviewToContainer();
 }
@@ -470,8 +889,16 @@ function updateTextPreview(sectionKey, elementSelector) {
 
     // Position
     element.style.top = `${config.y}px`;
-    element.style.left = '0';
-    element.style.right = '0';
+
+    // Handle X position
+    if (config.x !== null && config.x !== undefined) {
+        element.style.left = `${config.x}px`;
+        element.style.right = 'auto';
+        element.style.transform = 'none';
+    } else {
+        element.style.left = '0';
+        element.style.right = '0';
+    }
 
     // Font
     element.style.fontSize = `${config.size}px`;
@@ -481,12 +908,17 @@ function updateTextPreview(sectionKey, elementSelector) {
 
     // Align
     element.style.textAlign = config.align;
-    if (config.align === 'left') {
-        element.style.paddingLeft = '50px';
-        element.style.paddingRight = '0';
-    } else if (config.align === 'right') {
-        element.style.paddingLeft = '0';
-        element.style.paddingRight = '50px';
+    if (config.x === null || config.x === undefined) {
+        if (config.align === 'left') {
+            element.style.paddingLeft = '50px';
+            element.style.paddingRight = '0';
+        } else if (config.align === 'right') {
+            element.style.paddingLeft = '0';
+            element.style.paddingRight = '50px';
+        } else {
+            element.style.paddingLeft = '0';
+            element.style.paddingRight = '0';
+        }
     } else {
         element.style.paddingLeft = '0';
         element.style.paddingRight = '0';
@@ -521,14 +953,19 @@ function updateTextPreview(sectionKey, elementSelector) {
         element.style.padding = `${config.bgBlock.paddingY}px ${config.bgBlock.paddingX}px`;
         element.style.borderRadius = `${config.bgBlock.radius}px`;
         element.style.display = 'inline-block';
-        element.style.left = '50%';
-        element.style.right = 'auto';
-        element.style.transform = 'translateX(-50%)';
+
+        if (config.x === null || config.x === undefined) {
+            element.style.left = '50%';
+            element.style.right = 'auto';
+            element.style.transform = 'translateX(-50%)';
+        }
     } else {
         element.style.backgroundColor = 'transparent';
         element.style.padding = '0';
         element.style.borderRadius = '0';
-        element.style.transform = 'none';
+        if (config.x === null || config.x === undefined) {
+            element.style.transform = 'none';
+        }
     }
 }
 
@@ -633,6 +1070,11 @@ function buildTextConfig(textState) {
         align: textState.align,
         italic: textState.italic
     };
+
+    // X position
+    if (textState.x !== null && textState.x !== undefined) {
+        config.position_x = textState.x;
+    }
 
     // Stroke
     if (textState.stroke && textState.stroke.enabled) {
@@ -900,11 +1342,103 @@ function initTemplates() {
         ]);
     });
 
+    // Download template button
+    const downloadBtn = $('#downloadTemplateBtn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', downloadCurrentTemplate);
+    }
+
+    // Upload template button
+    const uploadBtn = $('#uploadTemplateBtn');
+    if (uploadBtn) {
+        uploadBtn.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    uploadTemplate(file);
+                }
+            };
+            input.click();
+        });
+    }
+
     $('#createTemplateBtn').addEventListener('click', () => {
         // Switch to single tab and save
         $('.nav-item[data-tab="single"]').click();
         setTimeout(() => $('#saveTemplateBtn').click(), 100);
     });
+}
+
+function downloadCurrentTemplate() {
+    const template = {
+        name: state.output.filename.replace('.png', ''),
+        config: {
+            canvas: { ...state.canvas },
+            primary: { ...state.primary },
+            secondary: { ...state.secondary },
+            tertiary: { ...state.tertiary },
+            body: { ...state.body },
+            output: { ...state.output }
+        },
+        timestamp: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `template_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showToast('模板已下载', 'success');
+}
+
+async function uploadTemplate(file) {
+    try {
+        const text = await file.text();
+        const template = JSON.parse(text);
+
+        if (!template.config) {
+            throw new Error('无效的模板文件格式');
+        }
+
+        // Apply the template
+        if (template.config.canvas) {
+            Object.assign(state.canvas, template.config.canvas);
+        }
+        if (template.config.primary) {
+            Object.assign(state.primary, template.config.primary);
+        }
+        if (template.config.secondary) {
+            Object.assign(state.secondary, template.config.secondary);
+        }
+        if (template.config.tertiary) {
+            Object.assign(state.tertiary, template.config.tertiary);
+        }
+        if (template.config.body) {
+            Object.assign(state.body, template.config.body);
+        }
+        if (template.config.output) {
+            Object.assign(state.output, template.config.output);
+        }
+
+        // Save to templates list
+        state.templates.push(template);
+        localStorage.setItem('pnggen_templates', JSON.stringify(state.templates));
+
+        // Update UI
+        syncUIFromState();
+        updatePreview();
+        renderTemplates();
+
+        showToast(`模板 "${template.name}" 已导入`, 'success');
+    } catch (error) {
+        showToast('导入失败: ' + error.message, 'error');
+    }
 }
 
 function saveTemplate() {
@@ -1028,38 +1562,104 @@ function syncUIFromState() {
     $('#canvasHeight').value = state.canvas.height;
 
     // Primary
-    $('#primaryEnabled').checked = state.primary.enabled;
-    $('#primaryText').value = state.primary.text;
-    $('#primaryFont').value = state.primary.font;
-    $('#primarySize').value = state.primary.size;
-    $('#primaryColor').value = state.primary.color;
-    $('#primaryColorText').value = state.primary.color;
-    $('#primaryY').value = state.primary.y;
+    syncSectionUI('primary');
 
     // Secondary
-    $('#secondaryEnabled').checked = state.secondary.enabled;
-    $('#secondaryText').value = state.secondary.text;
-    $('#secondaryFont').value = state.secondary.font;
-    $('#secondarySize').value = state.secondary.size;
-    $('#secondaryColor').value = state.secondary.color;
-    $('#secondaryColorText').value = state.secondary.color;
-    $('#secondaryY').value = state.secondary.y;
+    syncSectionUI('secondary');
 
     // Tertiary
-    $('#tertiaryEnabled').checked = state.tertiary.enabled;
-    $('#tertiaryText').value = state.tertiary.text;
+    syncSectionUI('tertiary');
 
     // Body
-    $('#bodyEnabled').checked = state.body.enabled;
-    $('#bodyText').value = state.body.text;
-    $('#bodyFont').value = state.body.font;
-    $('#bodySize').value = state.body.size;
-    $('#bodyColor').value = state.body.color;
-    $('#bodyColorText').value = state.body.color;
-    $('#bodyY').value = state.body.y;
+    syncSectionUI('body');
 
     // Output
     $('#outputFilename').value = state.output.filename;
+}
+
+function syncSectionUI(section) {
+    const s = state[section];
+
+    const enabled = $(`#${section}Enabled`);
+    if (enabled) enabled.checked = s.enabled;
+
+    const text = $(`#${section}Text`);
+    if (text) text.value = s.text;
+
+    const font = $(`#${section}Font`);
+    if (font) font.value = s.font;
+
+    const size = $(`#${section}Size`);
+    if (size) size.value = s.size;
+
+    const color = $(`#${section}Color`);
+    if (color) color.value = s.color;
+
+    const colorText = $(`#${section}ColorText`);
+    if (colorText) colorText.value = s.color;
+
+    const x = $(`#${section}X`);
+    if (x) x.value = s.x !== null ? s.x : '';
+
+    const y = $(`#${section}Y`);
+    if (y) y.value = s.y;
+
+    // Align buttons
+    $$(`[data-target="${section}"][data-align]`).forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.align === s.align);
+    });
+
+    // Style buttons
+    const boldBtn = $(`[data-target="${section}"][data-style="bold"]`);
+    if (boldBtn) boldBtn.classList.toggle('active', s.bold);
+
+    const italicBtn = $(`[data-target="${section}"][data-style="italic"]`);
+    if (italicBtn) italicBtn.classList.toggle('active', s.italic);
+
+    // Stroke
+    const strokeEnabled = $(`#${section}StrokeEnabled`);
+    if (strokeEnabled) strokeEnabled.checked = s.stroke?.enabled || false;
+
+    const strokeColor = $(`#${section}StrokeColor`);
+    if (strokeColor) strokeColor.value = s.stroke?.color || '#000000';
+
+    const strokeWidth = $(`#${section}StrokeWidth`);
+    if (strokeWidth) strokeWidth.value = s.stroke?.width || 2;
+
+    // Shadow
+    const shadowEnabled = $(`#${section}ShadowEnabled`);
+    if (shadowEnabled) shadowEnabled.checked = s.shadow?.enabled || false;
+
+    const shadowColor = $(`#${section}ShadowColor`);
+    if (shadowColor) shadowColor.value = s.shadow?.color || '#333333';
+
+    const shadowBlur = $(`#${section}ShadowBlur`);
+    if (shadowBlur) shadowBlur.value = s.shadow?.blur || 2;
+
+    const shadowX = $(`#${section}ShadowX`);
+    if (shadowX) shadowX.value = s.shadow?.x || 3;
+
+    const shadowY = $(`#${section}ShadowY`);
+    if (shadowY) shadowY.value = s.shadow?.y || 3;
+
+    // Background block
+    const bgBlockEnabled = $(`#${section}BgBlockEnabled`);
+    if (bgBlockEnabled) bgBlockEnabled.checked = s.bgBlock?.enabled || false;
+
+    const bgBlockColor = $(`#${section}BgBlockColor`);
+    if (bgBlockColor) bgBlockColor.value = s.bgBlock?.color || '#FFFF00';
+
+    const bgBlockOpacity = $(`#${section}BgBlockOpacity`);
+    if (bgBlockOpacity) bgBlockOpacity.value = s.bgBlock?.opacity || 200;
+
+    const bgBlockPaddingX = $(`#${section}BgBlockPaddingX`);
+    if (bgBlockPaddingX) bgBlockPaddingX.value = s.bgBlock?.paddingX || 20;
+
+    const bgBlockPaddingY = $(`#${section}BgBlockPaddingY`);
+    if (bgBlockPaddingY) bgBlockPaddingY.value = s.bgBlock?.paddingY || 10;
+
+    const bgBlockRadius = $(`#${section}BgBlockRadius`);
+    if (bgBlockRadius) bgBlockRadius.value = s.bgBlock?.radius || 8;
 }
 
 // ===== History =====

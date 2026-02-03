@@ -1237,3 +1237,212 @@ input:checked + .slider:before {
         height: 50%;
     }
 }
+
+/* ===== Safe Zone Overlay ===== */
+.safe-zone-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: none;
+    z-index: 10;
+}
+
+.safe-zone-overlay.active {
+    display: block;
+}
+
+.safe-zone {
+    position: absolute;
+    background: rgba(255, 0, 0, 0.15);
+    border: 1px dashed rgba(255, 0, 0, 0.5);
+}
+
+.safe-zone-top {
+    top: 0;
+    left: 0;
+    right: 0;
+}
+
+.safe-zone-bottom {
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.safe-zone-right {
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.safe-zone-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 128, 0, 0.1);
+    border: 2px dashed rgba(0, 128, 0, 0.5);
+    padding: 20px 40px;
+    color: rgba(0, 128, 0, 0.7);
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: var(--radius);
+    display: none;
+}
+
+.safe-zone-overlay.active .safe-zone-label {
+    display: block;
+}
+
+/* ===== Platform Badge ===== */
+.platform-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--primary-light);
+    color: var(--primary-color);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+/* ===== Templates Section ===== */
+.templates-section {
+    margin-bottom: 24px;
+}
+
+.templates-section h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+}
+
+.templates-section .templates-grid {
+    margin-top: 0;
+}
+
+.template-category {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.template-description {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+/* ===== Effect Options Visibility ===== */
+.effect-group .effect-options {
+    display: none;
+    margin-top: 8px;
+}
+
+.effect-group:has(.effect-label input:checked) .effect-options {
+    display: block;
+}
+
+/* Fallback for browsers without :has() */
+.effect-options.show {
+    display: block;
+}
+
+/* ===== Preview Info ===== */
+.preview-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ===== Modal Presets List ===== */
+.presets-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.preset-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.preset-item:hover {
+    background: var(--primary-light);
+}
+
+.preset-item.selected {
+    background: var(--primary-light);
+    border: 2px solid var(--primary-color);
+}
+
+.preset-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--surface-color);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.preset-details {
+    flex: 1;
+}
+
+.preset-name {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.preset-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ===== Font Select Styles ===== */
+.font-select {
+    max-width: 100%;
+}
+
+.font-select optgroup {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.font-select option {
+    font-weight: normal;
+    padding: 4px 8px;
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.empty-state svg {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    font-size: 14px;
+}

@@ -80,21 +80,37 @@
                         <div class="panel-header">
                             <h2>图片配置</h2>
                             <div class="header-actions">
-                                <button class="btn btn-ghost" id="loadTemplateBtn">
+                                <button class="btn btn-ghost" id="loadPresetBtn" title="加载预设模板">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                                        <polyline points="2 17 12 22 22 17"/>
+                                        <polyline points="2 12 12 17 22 12"/>
+                                    </svg>
+                                    预设
+                                </button>
+                                <button class="btn btn-ghost" id="loadTemplateBtn" title="加载模板">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                                        <polyline points="7 10 12 15 17 10"/>
-                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
                                     </svg>
-                                    加载模板
+                                    导入
                                 </button>
-                                <button class="btn btn-ghost" id="saveTemplateBtn">
+                                <button class="btn btn-ghost" id="saveTemplateBtn" title="保存模板">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
                                         <polyline points="17 21 17 13 7 13 7 21"/>
                                         <polyline points="7 3 7 8 15 8"/>
                                     </svg>
-                                    保存模板
+                                    保存
+                                </button>
+                                <button class="btn btn-ghost" id="downloadTemplateBtn" title="下载模板">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                        <polyline points="7 10 12 15 17 10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                    导出
                                 </button>
                             </div>
                         </div>
@@ -124,33 +140,55 @@
                                             <input type="number" id="canvasHeight" value="1920" min="100" max="4096">
                                         </div>
                                     </div>
+                                    <div class="form-group full-width">
+                                        <label>平台预设</label>
+                                        <select id="platformPreset">
+                                            <option value="custom">自定义尺寸</option>
+                                            <optgroup label="竖屏视频 9:16">
+                                                <option value="douyin" selected>抖音 (1080×1920)</option>
+                                                <option value="shipinhao">视频号 (1080×1920)</option>
+                                                <option value="kuaishou">快手 (1080×1920)</option>
+                                                <option value="tiktok">TikTok (1080×1920)</option>
+                                                <option value="instagram_reels">Instagram Reels (1080×1920)</option>
+                                                <option value="youtube_shorts">YouTube Shorts (1080×1920)</option>
+                                                <option value="bilibili">B站 (1080×1920)</option>
+                                            </optgroup>
+                                            <optgroup label="小红书">
+                                                <option value="xiaohongshu">小红书 3:4 (1080×1440)</option>
+                                            </optgroup>
+                                            <optgroup label="正方形 1:1">
+                                                <option value="wechat_moments">微信朋友圈 (1080×1080)</option>
+                                                <option value="instagram_post">Instagram 帖子 (1080×1080)</option>
+                                            </optgroup>
+                                            <optgroup label="横屏 16:9">
+                                                <option value="youtube">YouTube 封面 (1920×1080)</option>
+                                                <option value="bilibili_cover">B站封面 (1920×1080)</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
                                     <div class="form-row">
-                                        <div class="form-group">
-                                            <label>预设尺寸</label>
-                                            <select id="presetSize">
-                                                <option value="custom">自定义</option>
-                                                <option value="1080x1920" selected>手机竖屏 (1080×1920)</option>
-                                                <option value="1920x1080">手机横屏 (1920×1080)</option>
-                                                <option value="1080x1080">正方形 (1080×1080)</option>
-                                                <option value="800x600">4:3 (800×600)</option>
-                                                <option value="1280x720">16:9 HD (1280×720)</option>
-                                                <option value="1920x1080">16:9 FHD (1920×1080)</option>
-                                            </select>
-                                        </div>
                                         <div class="form-group">
                                             <label>背景</label>
                                             <div class="bg-toggle">
                                                 <button class="bg-option active" data-bg="transparent">透明</button>
                                                 <button class="bg-option" data-bg="color">颜色</button>
                                             </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>背景色</label>
                                             <input type="color" id="bgColor" value="#ffffff" class="hidden">
                                         </div>
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label>
+                                            <input type="checkbox" id="showSafeZone"> 显示安全区参考线
+                                        </label>
                                     </div>
                                 </div>
                             </section>
 
                             <!-- 一级标题 -->
-                            <section class="config-section">
+                            <section class="config-section" id="section-primary">
                                 <div class="section-header" data-collapse="primary">
                                     <h3>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -178,7 +216,7 @@
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label>字体</label>
-                                            <select id="primaryFont">
+                                            <select id="primaryFont" class="font-select">
                                                 <option value="default">默认字体</option>
                                                 <option value="msyh" selected>微软雅黑</option>
                                                 <option value="simhei">黑体</option>
@@ -206,28 +244,19 @@
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group">
+                                            <label>X位置</label>
+                                            <input type="number" id="primaryX" value="" placeholder="自动居中">
+                                        </div>
+                                        <div class="form-group">
                                             <label>对齐</label>
                                             <div class="align-buttons">
-                                                <button class="align-btn" data-align="left" data-target="primary">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                        <line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/>
-                                                        <line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/>
-                                                    </svg>
-                                                </button>
-                                                <button class="align-btn active" data-align="center" data-target="primary">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                        <line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/>
-                                                        <line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/>
-                                                    </svg>
-                                                </button>
-                                                <button class="align-btn" data-align="right" data-target="primary">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                        <line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/>
-                                                        <line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/>
-                                                    </svg>
-                                                </button>
+                                                <button class="align-btn" data-align="left" data-target="primary" title="左对齐">L</button>
+                                                <button class="align-btn active" data-align="center" data-target="primary" title="居中">C</button>
+                                                <button class="align-btn" data-align="right" data-target="primary" title="右对齐">R</button>
                                             </div>
                                         </div>
+                                    </div>
+                                    <div class="form-row">
                                         <div class="form-group">
                                             <label>样式</label>
                                             <div class="style-buttons">
@@ -236,18 +265,16 @@
                                             </div>
                                         </div>
                                     </div>
-
                                     <!-- 高级特效 -->
                                     <details class="advanced-options">
                                         <summary>高级特效</summary>
                                         <div class="advanced-content">
-                                            <!-- 描边 -->
                                             <div class="effect-group">
                                                 <label class="effect-label">
                                                     <input type="checkbox" id="primaryStrokeEnabled">
                                                     <span>描边</span>
                                                 </label>
-                                                <div class="effect-options" id="primaryStrokeOptions">
+                                                <div class="effect-options">
                                                     <div class="form-row">
                                                         <div class="form-group">
                                                             <label>颜色</label>
@@ -260,13 +287,12 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <!-- 阴影 -->
                                             <div class="effect-group">
                                                 <label class="effect-label">
                                                     <input type="checkbox" id="primaryShadowEnabled">
                                                     <span>阴影</span>
                                                 </label>
-                                                <div class="effect-options" id="primaryShadowOptions">
+                                                <div class="effect-options">
                                                     <div class="form-row">
                                                         <div class="form-group">
                                                             <label>颜色</label>
@@ -289,13 +315,12 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <!-- 背景色块 -->
                                             <div class="effect-group">
                                                 <label class="effect-label">
                                                     <input type="checkbox" id="primaryBgBlockEnabled">
                                                     <span>背景色块</span>
                                                 </label>
-                                                <div class="effect-options" id="primaryBgBlockOptions">
+                                                <div class="effect-options">
                                                     <div class="form-row">
                                                         <div class="form-group">
                                                             <label>颜色</label>
@@ -316,11 +341,9 @@
                                                             <input type="number" id="primaryBgBlockPaddingY" value="10" min="0" max="100">
                                                         </div>
                                                     </div>
-                                                    <div class="form-row">
-                                                        <div class="form-group">
-                                                            <label>圆角</label>
-                                                            <input type="number" id="primaryBgBlockRadius" value="8" min="0" max="50">
-                                                        </div>
+                                                    <div class="form-group full-width">
+                                                        <label>圆角</label>
+                                                        <input type="number" id="primaryBgBlockRadius" value="8" min="0" max="50">
                                                     </div>
                                                 </div>
                                             </div>
@@ -330,7 +353,7 @@
                             </section>
 
                             <!-- 二级标题 -->
-                            <section class="config-section">
+                            <section class="config-section" id="section-secondary">
                                 <div class="section-header" data-collapse="secondary">
                                     <h3>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -359,7 +382,7 @@
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label>字体</label>
-                                            <select id="secondaryFont">
+                                            <select id="secondaryFont" class="font-select">
                                                 <option value="default">默认字体</option>
                                                 <option value="msyh" selected>微软雅黑</option>
                                                 <option value="simhei">黑体</option>
@@ -387,41 +410,74 @@
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group">
-                                            <label>对齐</label>
-                                            <div class="align-buttons">
-                                                <button class="align-btn" data-align="left" data-target="secondary">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                        <line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/>
-                                                        <line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/>
-                                                    </svg>
-                                                </button>
-                                                <button class="align-btn active" data-align="center" data-target="secondary">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                        <line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/>
-                                                        <line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/>
-                                                    </svg>
-                                                </button>
-                                                <button class="align-btn" data-align="right" data-target="secondary">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                        <line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/>
-                                                        <line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/>
-                                                    </svg>
-                                                </button>
-                                            </div>
+                                            <label>X位置</label>
+                                            <input type="number" id="secondaryX" value="" placeholder="自动居中">
                                         </div>
                                         <div class="form-group">
-                                            <label>样式</label>
-                                            <div class="style-buttons">
-                                                <button class="style-btn active" data-style="bold" data-target="secondary" title="粗体">B</button>
-                                                <button class="style-btn active" data-style="italic" data-target="secondary" title="斜体">I</button>
+                                            <label>对齐</label>
+                                            <div class="align-buttons">
+                                                <button class="align-btn" data-align="left" data-target="secondary">L</button>
+                                                <button class="align-btn active" data-align="center" data-target="secondary">C</button>
+                                                <button class="align-btn" data-align="right" data-target="secondary">R</button>
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>样式</label>
+                                            <div class="style-buttons">
+                                                <button class="style-btn active" data-style="bold" data-target="secondary">B</button>
+                                                <button class="style-btn active" data-style="italic" data-target="secondary">I</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 高级特效 -->
+                                    <details class="advanced-options">
+                                        <summary>高级特效</summary>
+                                        <div class="advanced-content">
+                                            <div class="effect-group">
+                                                <label class="effect-label"><input type="checkbox" id="secondaryStrokeEnabled"><span>描边</span></label>
+                                                <div class="effect-options">
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>颜色</label><input type="color" id="secondaryStrokeColor" value="#000000"></div>
+                                                        <div class="form-group"><label>宽度</label><input type="number" id="secondaryStrokeWidth" value="2" min="1" max="10"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="effect-group">
+                                                <label class="effect-label"><input type="checkbox" id="secondaryShadowEnabled"><span>阴影</span></label>
+                                                <div class="effect-options">
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>颜色</label><input type="color" id="secondaryShadowColor" value="#333333"></div>
+                                                        <div class="form-group"><label>模糊</label><input type="number" id="secondaryShadowBlur" value="2" min="0" max="20"></div>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>X偏移</label><input type="number" id="secondaryShadowX" value="3"></div>
+                                                        <div class="form-group"><label>Y偏移</label><input type="number" id="secondaryShadowY" value="3"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="effect-group">
+                                                <label class="effect-label"><input type="checkbox" id="secondaryBgBlockEnabled"><span>背景色块</span></label>
+                                                <div class="effect-options">
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>颜色</label><input type="color" id="secondaryBgBlockColor" value="#ffff00"></div>
+                                                        <div class="form-group"><label>透明度</label><input type="range" id="secondaryBgBlockOpacity" value="200" min="0" max="255"></div>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>内边距X</label><input type="number" id="secondaryBgBlockPaddingX" value="20"></div>
+                                                        <div class="form-group"><label>内边距Y</label><input type="number" id="secondaryBgBlockPaddingY" value="10"></div>
+                                                    </div>
+                                                    <div class="form-group full-width"><label>圆角</label><input type="number" id="secondaryBgBlockRadius" value="8"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </details>
                                 </div>
                             </section>
 
                             <!-- 三级标题 -->
-                            <section class="config-section">
+                            <section class="config-section" id="section-tertiary">
                                 <div class="section-header" data-collapse="tertiary">
                                     <h3>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -449,7 +505,7 @@
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label>字体</label>
-                                            <select id="tertiaryFont">
+                                            <select id="tertiaryFont" class="font-select">
                                                 <option value="default">默认字体</option>
                                                 <option value="msyh" selected>微软雅黑</option>
                                                 <option value="simhei">黑体</option>
@@ -475,11 +531,76 @@
                                             <input type="number" id="tertiaryY" value="350" min="0">
                                         </div>
                                     </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>X位置</label>
+                                            <input type="number" id="tertiaryX" value="" placeholder="自动居中">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>对齐</label>
+                                            <div class="align-buttons">
+                                                <button class="align-btn" data-align="left" data-target="tertiary">L</button>
+                                                <button class="align-btn active" data-align="center" data-target="tertiary">C</button>
+                                                <button class="align-btn" data-align="right" data-target="tertiary">R</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>样式</label>
+                                            <div class="style-buttons">
+                                                <button class="style-btn" data-style="bold" data-target="tertiary">B</button>
+                                                <button class="style-btn" data-style="italic" data-target="tertiary">I</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 高级特效 -->
+                                    <details class="advanced-options">
+                                        <summary>高级特效</summary>
+                                        <div class="advanced-content">
+                                            <div class="effect-group">
+                                                <label class="effect-label"><input type="checkbox" id="tertiaryStrokeEnabled"><span>描边</span></label>
+                                                <div class="effect-options">
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>颜色</label><input type="color" id="tertiaryStrokeColor" value="#000000"></div>
+                                                        <div class="form-group"><label>宽度</label><input type="number" id="tertiaryStrokeWidth" value="2"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="effect-group">
+                                                <label class="effect-label"><input type="checkbox" id="tertiaryShadowEnabled"><span>阴影</span></label>
+                                                <div class="effect-options">
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>颜色</label><input type="color" id="tertiaryShadowColor" value="#333333"></div>
+                                                        <div class="form-group"><label>模糊</label><input type="number" id="tertiaryShadowBlur" value="2"></div>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>X偏移</label><input type="number" id="tertiaryShadowX" value="3"></div>
+                                                        <div class="form-group"><label>Y偏移</label><input type="number" id="tertiaryShadowY" value="3"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="effect-group">
+                                                <label class="effect-label"><input type="checkbox" id="tertiaryBgBlockEnabled"><span>背景色块</span></label>
+                                                <div class="effect-options">
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>颜色</label><input type="color" id="tertiaryBgBlockColor" value="#ffff00"></div>
+                                                        <div class="form-group"><label>透明度</label><input type="range" id="tertiaryBgBlockOpacity" value="200" min="0" max="255"></div>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>内边距X</label><input type="number" id="tertiaryBgBlockPaddingX" value="20"></div>
+                                                        <div class="form-group"><label>内边距Y</label><input type="number" id="tertiaryBgBlockPaddingY" value="10"></div>
+                                                    </div>
+                                                    <div class="form-group full-width"><label>圆角</label><input type="number" id="tertiaryBgBlockRadius" value="8"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </details>
                                 </div>
                             </section>
 
                             <!-- 正文 -->
-                            <section class="config-section">
+                            <section class="config-section" id="section-body">
                                 <div class="section-header" data-collapse="body">
                                     <h3>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
@@ -510,7 +631,7 @@
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label>字体</label>
-                                            <select id="bodyFont">
+                                            <select id="bodyFont" class="font-select">
                                                 <option value="default">默认字体</option>
                                                 <option value="msyh" selected>微软雅黑</option>
                                                 <option value="simhei">黑体</option>
@@ -538,36 +659,69 @@
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group">
-                                            <label>对齐</label>
-                                            <div class="align-buttons">
-                                                <button class="align-btn" data-align="left" data-target="body">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                        <line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/>
-                                                        <line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/>
-                                                    </svg>
-                                                </button>
-                                                <button class="align-btn active" data-align="center" data-target="body">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                        <line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/>
-                                                        <line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/>
-                                                    </svg>
-                                                </button>
-                                                <button class="align-btn" data-align="right" data-target="body">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                                        <line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/>
-                                                        <line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/>
-                                                    </svg>
-                                                </button>
-                                            </div>
+                                            <label>X位置</label>
+                                            <input type="number" id="bodyX" value="" placeholder="自动居中">
                                         </div>
                                         <div class="form-group">
-                                            <label>样式</label>
-                                            <div class="style-buttons">
-                                                <button class="style-btn" data-style="bold" data-target="body" title="粗体">B</button>
-                                                <button class="style-btn active" data-style="italic" data-target="body" title="斜体">I</button>
+                                            <label>对齐</label>
+                                            <div class="align-buttons">
+                                                <button class="align-btn" data-align="left" data-target="body">L</button>
+                                                <button class="align-btn active" data-align="center" data-target="body">C</button>
+                                                <button class="align-btn" data-align="right" data-target="body">R</button>
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>样式</label>
+                                            <div class="style-buttons">
+                                                <button class="style-btn" data-style="bold" data-target="body">B</button>
+                                                <button class="style-btn active" data-style="italic" data-target="body">I</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- 高级特效 -->
+                                    <details class="advanced-options">
+                                        <summary>高级特效</summary>
+                                        <div class="advanced-content">
+                                            <div class="effect-group">
+                                                <label class="effect-label"><input type="checkbox" id="bodyStrokeEnabled"><span>描边</span></label>
+                                                <div class="effect-options">
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>颜色</label><input type="color" id="bodyStrokeColor" value="#000000"></div>
+                                                        <div class="form-group"><label>宽度</label><input type="number" id="bodyStrokeWidth" value="2"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="effect-group">
+                                                <label class="effect-label"><input type="checkbox" id="bodyShadowEnabled"><span>阴影</span></label>
+                                                <div class="effect-options">
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>颜色</label><input type="color" id="bodyShadowColor" value="#333333"></div>
+                                                        <div class="form-group"><label>模糊</label><input type="number" id="bodyShadowBlur" value="2"></div>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>X偏移</label><input type="number" id="bodyShadowX" value="3"></div>
+                                                        <div class="form-group"><label>Y偏移</label><input type="number" id="bodyShadowY" value="3"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="effect-group">
+                                                <label class="effect-label"><input type="checkbox" id="bodyBgBlockEnabled"><span>背景色块</span></label>
+                                                <div class="effect-options">
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>颜色</label><input type="color" id="bodyBgBlockColor" value="#000000"></div>
+                                                        <div class="form-group"><label>透明度</label><input type="range" id="bodyBgBlockOpacity" value="150" min="0" max="255"></div>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>内边距X</label><input type="number" id="bodyBgBlockPaddingX" value="25"></div>
+                                                        <div class="form-group"><label>内边距Y</label><input type="number" id="bodyBgBlockPaddingY" value="12"></div>
+                                                    </div>
+                                                    <div class="form-group full-width"><label>圆角</label><input type="number" id="bodyBgBlockRadius" value="10"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </details>
                                 </div>
                             </section>
 
@@ -602,19 +756,9 @@
                             <h2>预览</h2>
                             <div class="preview-actions">
                                 <div class="zoom-controls">
-                                    <button class="btn btn-icon" id="zoomOut" title="缩小">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                                            <line x1="8" y1="11" x2="14" y2="11"/>
-                                        </svg>
-                                    </button>
+                                    <button class="btn btn-icon" id="zoomOut" title="缩小">-</button>
                                     <span id="zoomLevel">50%</span>
-                                    <button class="btn btn-icon" id="zoomIn" title="放大">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                                            <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
-                                        </svg>
-                                    </button>
+                                    <button class="btn btn-icon" id="zoomIn" title="放大">+</button>
                                 </div>
                                 <button class="btn btn-icon" id="resetView" title="重置视图">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
@@ -626,6 +770,13 @@
                         <div class="preview-container" id="previewContainer">
                             <div class="preview-canvas-wrapper" id="previewWrapper">
                                 <div class="preview-canvas" id="previewCanvas">
+                                    <!-- 安全区参考线 -->
+                                    <div class="safe-zone-overlay" id="safeZoneOverlay">
+                                        <div class="safe-zone safe-zone-top" id="szTop"></div>
+                                        <div class="safe-zone safe-zone-bottom" id="szBottom"></div>
+                                        <div class="safe-zone safe-zone-right" id="szRight"></div>
+                                        <div class="safe-zone-label" id="szLabel">安全区</div>
+                                    </div>
                                     <div class="text-element" id="preview-primary"></div>
                                     <div class="text-element" id="preview-secondary"></div>
                                     <div class="text-element" id="preview-tertiary"></div>
@@ -636,15 +787,10 @@
                         <div class="preview-footer">
                             <div class="preview-info">
                                 <span id="previewDimensions">1080 × 1920</span>
+                                <span id="previewPlatform" class="platform-badge">抖音</span>
                             </div>
                             <div class="action-buttons">
-                                <button class="btn btn-secondary" id="previewBtn">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                        <circle cx="12" cy="12" r="3"/>
-                                    </svg>
-                                    刷新预览
-                                </button>
+                                <button class="btn btn-secondary" id="previewBtn">刷新预览</button>
                                 <button class="btn btn-primary" id="generateBtn">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
@@ -666,89 +812,55 @@
                         <h2>批量生成</h2>
                         <p class="panel-description">通过CSV或JSON批量生成多张图片</p>
                     </div>
-
                     <div class="batch-content">
                         <div class="batch-input-section">
                             <div class="input-tabs">
                                 <button class="input-tab active" data-input="csv">CSV格式</button>
                                 <button class="input-tab" data-input="json">JSON格式</button>
                             </div>
-
                             <div class="input-content active" id="csv-input">
                                 <div class="csv-help">
-                                    <p>每行一条记录，字段用逗号分隔。支持的字段：</p>
+                                    <p>每行一条记录，字段用逗号分隔：</p>
                                     <code>一级标题, 二级标题, 三级标题, 正文, 文件名</code>
                                 </div>
-                                <textarea id="csvData" rows="10" placeholder="小鹏P7+挑战多米诺车位, 从一穷二白到反客为主, , 以前觉得这种高科技离我们很远, image_001.png
-第二条标题, 第二条副标题, , 第二条正文内容, image_002.png"></textarea>
+                                <textarea id="csvData" rows="10" placeholder="标题1, 副标题1, , 正文1, image_001.png
+标题2, 副标题2, , 正文2, image_002.png"></textarea>
                             </div>
-
                             <div class="input-content" id="json-input">
                                 <div class="json-help">
-                                    <p>JSON数组格式，每个对象代表一张图片的配置</p>
+                                    <p>JSON数组格式</p>
                                 </div>
-                                <textarea id="jsonData" rows="10" placeholder='[
-  {
-    "title_primary": "标题1",
-    "title_secondary": "副标题1",
-    "body": "正文1",
-    "filename": "image_001.png"
-  }
-]'></textarea>
+                                <textarea id="jsonData" rows="10" placeholder='[{"title_primary": "标题1", "title_secondary": "副标题1"}]'></textarea>
                             </div>
-
                             <div class="batch-options">
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label>使用模板</label>
                                         <select id="batchTemplate">
                                             <option value="current">当前配置</option>
-                                            <option value="default">默认模板</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
                                         <label>文件名前缀</label>
-                                        <input type="text" id="batchPrefix" value="batch_" placeholder="batch_">
+                                        <input type="text" id="batchPrefix" value="batch_">
                                     </div>
                                 </div>
                             </div>
                         </div>
-
                         <div class="batch-preview-section">
                             <h3>预览列表</h3>
                             <div class="batch-list" id="batchList">
                                 <div class="batch-empty">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
-                                        <rect x="3" y="3" width="18" height="18" rx="2"/>
-                                        <line x1="9" y1="9" x2="15" y2="15"/>
-                                        <line x1="15" y1="9" x2="9" y2="15"/>
-                                    </svg>
                                     <p>在左侧输入数据后点击"解析数据"</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                     <div class="batch-footer">
-                        <div class="batch-stats">
-                            <span id="batchCount">0 张图片待生成</span>
-                        </div>
+                        <div class="batch-stats"><span id="batchCount">0 张图片待生成</span></div>
                         <div class="action-buttons">
-                            <button class="btn btn-secondary" id="parseDataBtn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                    <polyline points="16 18 22 12 16 6"/>
-                                    <polyline points="8 6 2 12 8 18"/>
-                                </svg>
-                                解析数据
-                            </button>
-                            <button class="btn btn-primary" id="batchGenerateBtn" disabled>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                                    <polyline points="7 10 12 15 17 10"/>
-                                    <line x1="12" y1="15" x2="12" y2="3"/>
-                                </svg>
-                                批量生成
-                            </button>
+                            <button class="btn btn-secondary" id="parseDataBtn">解析数据</button>
+                            <button class="btn btn-primary" id="batchGenerateBtn" disabled>批量生成</button>
                         </div>
                     </div>
                 </div>
@@ -759,16 +871,35 @@
                 <div class="templates-panel">
                     <div class="panel-header">
                         <h2>模板管理</h2>
-                        <button class="btn btn-primary" id="createTemplateBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                <line x1="12" y1="5" x2="12" y2="19"/>
-                                <line x1="5" y1="12" x2="19" y2="12"/>
-                            </svg>
-                            新建模板
-                        </button>
+                        <div class="header-actions">
+                            <button class="btn btn-secondary" id="uploadTemplateBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                                上传模板
+                            </button>
+                            <button class="btn btn-primary" id="createTemplateBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                新建模板
+                            </button>
+                        </div>
                     </div>
-                    <div class="templates-grid" id="templatesGrid">
-                        <!-- 模板卡片会动态插入 -->
+
+                    <!-- 预设模板 -->
+                    <div class="templates-section">
+                        <h3>预设模板</h3>
+                        <div class="templates-grid" id="presetsGrid"></div>
+                    </div>
+
+                    <!-- 我的模板 -->
+                    <div class="templates-section">
+                        <h3>我的模板</h3>
+                        <div class="templates-grid" id="templatesGrid"></div>
                     </div>
                 </div>
             </div>
@@ -778,17 +909,9 @@
                 <div class="history-panel">
                     <div class="panel-header">
                         <h2>生成历史</h2>
-                        <button class="btn btn-ghost" id="clearHistoryBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                <polyline points="3 6 5 6 21 6"/>
-                                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                            </svg>
-                            清空历史
-                        </button>
+                        <button class="btn btn-ghost" id="clearHistoryBtn">清空历史</button>
                     </div>
-                    <div class="history-list" id="historyList">
-                        <!-- 历史记录会动态插入 -->
-                    </div>
+                    <div class="history-list" id="historyList"></div>
                 </div>
             </div>
         </main>
@@ -799,23 +922,14 @@
         <div class="modal" id="modal">
             <div class="modal-header">
                 <h3 id="modalTitle">模态框标题</h3>
-                <button class="btn btn-icon modal-close" id="modalClose">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </button>
+                <button class="btn btn-icon modal-close" id="modalClose">&times;</button>
             </div>
-            <div class="modal-body" id="modalBody">
-                <!-- 模态框内容 -->
-            </div>
-            <div class="modal-footer" id="modalFooter">
-                <!-- 模态框按钮 -->
-            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-footer" id="modalFooter"></div>
         </div>
     </div>
 
-    <!-- Toast 通知 -->
+    <!-- Toast -->
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- 加载指示器 -->
@@ -825,6 +939,9 @@
             <p id="loadingText">生成中...</p>
         </div>
     </div>
+
+    <!-- 隐藏的文件上传 -->
+    <input type="file" id="templateFileInput" accept=".json" style="display:none">
 
     <script src="/static/js/app.js"></script>
 </body>
