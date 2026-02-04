@@ -219,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initTemplates();
     initHistory();
     initModals();
+    initSettings();
     loadSystemFonts();
     loadPresetTemplates();
 
@@ -481,7 +482,7 @@ async function loadPresetTemplates() {
 }
 
 function renderPresetTemplates() {
-    const container = $('#presetList');
+    const container = $('#presetsGrid');
     if (!container) return;
 
     if (state.presetTemplates.length === 0) {
@@ -1307,6 +1308,12 @@ async function batchGenerate() {
 
 // ===== Templates =====
 function initTemplates() {
+    // Load preset button - shows preset templates modal
+    const loadPresetBtn = $('#loadPresetBtn');
+    if (loadPresetBtn) {
+        loadPresetBtn.addEventListener('click', showPresetModal);
+    }
+
     $('#saveTemplateBtn').addEventListener('click', () => {
         showModal('保存模板', `
             <div class="form-group">
@@ -1771,6 +1778,133 @@ function showModal(title, content, buttons = []) {
 function hideModal() {
     $('#modalOverlay').classList.remove('active');
 }
+
+// Show preset templates modal
+function showPresetModal() {
+    if (state.presetTemplates.length === 0) {
+        showToast('正在加载预设模板...', 'info');
+        loadPresetTemplates().then(() => {
+            if (state.presetTemplates.length > 0) {
+                showPresetModal();
+            } else {
+                showToast('暂无预设模板', 'warning');
+            }
+        });
+        return;
+    }
+
+    const presetList = state.presetTemplates.map((preset, index) => `
+        <div class="preset-modal-item" onclick="applyPresetTemplate(${index}); hideModal();">
+            <div class="preset-modal-name">${preset.name}</div>
+            <div class="preset-modal-desc">${preset.description || ''}</div>
+        </div>
+    `).join('');
+
+    showModal('选择预设模板', `
+        <div class="preset-modal-list">
+            ${presetList}
+        </div>
+    `, [
+        { text: '取消', class: 'btn-secondary', action: hideModal }
+    ]);
+}
+
+// ===== Settings =====
+function initSettings() {
+    const settingsBtn = $('#settingsBtn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', showSettingsModal);
+    }
+}
+
+function showSettingsModal() {
+    showModal('设置', `
+        <div class="settings-content">
+            <div class="settings-section">
+                <h4>API 设置</h4>
+                <div class="form-group">
+                    <label>API 地址</label>
+                    <input type="text" id="settingsApiUrl" value="${API_BASE || window.location.origin}" placeholder="http://localhost:8000">
+                </div>
+            </div>
+            <div class="settings-section">
+                <h4>输出设置</h4>
+                <div class="form-group">
+                    <label>默认输出目录</label>
+                    <input type="text" id="settingsOutputDir" value="output" placeholder="output">
+                </div>
+            </div>
+            <div class="settings-section">
+                <h4>界面设置</h4>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="settingsAutoPreview" checked>
+                        自动更新预览
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="settingsShowSafeZone">
+                        默认显示安全区
+                    </label>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h4>数据管理</h4>
+                <div class="form-row">
+                    <button class="btn btn-secondary" onclick="exportAllData()">导出所有数据</button>
+                    <button class="btn btn-ghost" onclick="clearAllData()">清空本地数据</button>
+                </div>
+            </div>
+        </div>
+    `, [
+        { text: '关闭', class: 'btn-secondary', action: hideModal },
+        { text: '保存设置', class: 'btn-primary', action: saveSettings }
+    ]);
+}
+
+function saveSettings() {
+    // Save settings to localStorage
+    const settings = {
+        apiUrl: $('#settingsApiUrl')?.value || '',
+        outputDir: $('#settingsOutputDir')?.value || 'output',
+        autoPreview: $('#settingsAutoPreview')?.checked ?? true,
+        showSafeZone: $('#settingsShowSafeZone')?.checked ?? false
+    };
+    localStorage.setItem('pnggen_settings', JSON.stringify(settings));
+    hideModal();
+    showToast('设置已保存', 'success');
+}
+
+window.exportAllData = function() {
+    const data = {
+        templates: state.templates,
+        history: state.history,
+        settings: JSON.parse(localStorage.getItem('pnggen_settings') || '{}')
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pnggen_backup_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('数据已导出', 'success');
+};
+
+window.clearAllData = function() {
+    if (confirm('确定要清空所有本地数据吗？此操作不可恢复。')) {
+        localStorage.removeItem('pnggen_templates');
+        localStorage.removeItem('pnggen_history');
+        localStorage.removeItem('pnggen_settings');
+        state.templates = [];
+        state.history = [];
+        renderTemplates();
+        renderHistory();
+        hideModal();
+        showToast('本地数据已清空', 'success');
+    }
+};
 
 // ===== Toast =====
 function showToast(message, type = 'info') {

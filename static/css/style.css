@@ -1068,6 +1068,87 @@ input:checked + .slider:before {
     border-top: 1px solid var(--border-color);
 }
 
+/* ===== Preset Modal ===== */
+.preset-modal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.preset-modal-item {
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.preset-modal-item:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+}
+
+.preset-modal-name {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.preset-modal-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ===== Settings Modal ===== */
+.settings-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.settings-section {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.settings-section h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.settings-section .form-group {
+    margin-bottom: 12px;
+}
+
+.settings-section .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.settings-section .form-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.settings-section .form-row {
+    display: flex;
+    gap: 8px;
+}
+
+.settings-section .form-row .btn {
+    flex: 1;
+}
+
 /* ===== Toast ===== */
 .toast-container {
     position: fixed;
