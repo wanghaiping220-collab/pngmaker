@@ -278,7 +278,6 @@ function initPlatformPresets() {
                 // Update UI
                 $('#canvasWidth').value = config.width;
                 $('#canvasHeight').value = config.height;
-                $('#presetSize').value = 'custom';
 
                 updatePreview();
                 updateSafeZoneOverlay();
@@ -350,29 +349,18 @@ function initCanvasControls() {
     // Width & Height
     $('#canvasWidth').addEventListener('input', (e) => {
         state.canvas.width = parseInt(e.target.value) || 1080;
-        $('#presetSize').value = 'custom';
+        const platformSelect = $('#platformPreset');
+        if (platformSelect) platformSelect.value = 'custom';
         updatePreview();
         updateSafeZoneOverlay();
     });
 
     $('#canvasHeight').addEventListener('input', (e) => {
         state.canvas.height = parseInt(e.target.value) || 1920;
-        $('#presetSize').value = 'custom';
+        const platformSelect = $('#platformPreset');
+        if (platformSelect) platformSelect.value = 'custom';
         updatePreview();
         updateSafeZoneOverlay();
-    });
-
-    // Preset sizes
-    $('#presetSize').addEventListener('change', (e) => {
-        if (e.target.value !== 'custom') {
-            const [w, h] = e.target.value.split('x').map(Number);
-            state.canvas.width = w;
-            state.canvas.height = h;
-            $('#canvasWidth').value = w;
-            $('#canvasHeight').value = h;
-            updatePreview();
-            updateSafeZoneOverlay();
-        }
     });
 
     // Background toggle
