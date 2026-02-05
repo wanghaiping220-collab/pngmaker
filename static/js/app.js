@@ -81,7 +81,8 @@ const state = {
     safeZone: {
         enabled: false,
         platform: 'douyin',
-        config: null
+        config: null,
+        autoFit: false
     }
 };
 
@@ -296,6 +297,17 @@ function initSafeZoneControls() {
         });
     }
 
+    // Auto-fit to safe zone checkbox
+    const autoFitCheckbox = $('#autoFitSafeZone');
+    if (autoFitCheckbox) {
+        autoFitCheckbox.addEventListener('change', (e) => {
+            state.safeZone.autoFit = e.target.checked;
+            if (e.target.checked) {
+                applyAutoFitToAllSections();
+            }
+        });
+    }
+
     // Initialize with default platform
     state.safeZone.config = SAFE_ZONES['douyin'];
 }
@@ -342,6 +354,95 @@ function updateSafeZoneOverlay() {
     } else {
         overlay.classList.remove('active');
     }
+}
+
+// ===== Safe Zone Auto-Fit =====
+function getSafeZoneBounds() {
+    const { width, height } = state.canvas;
+    if (!state.safeZone.config) {
+        return {
+            left: 50,
+            right: width - 50,
+            top: 50,
+            bottom: height - 50,
+            width: width - 100,
+            height: height - 100
+        };
+    }
+    const config = state.safeZone.config;
+    return {
+        left: 50,
+        right: width - config.safeRight,
+        top: config.safeTop,
+        bottom: height - config.safeBottom,
+        width: width - config.safeRight - 50,
+        height: height - config.safeTop - config.safeBottom
+    };
+}
+
+function autoFitTextToSafeZone(section) {
+    const textConfig = state[section];
+    if (!textConfig.enabled || !textConfig.text) return;
+
+    const bounds = getSafeZoneBounds();
+    const text = textConfig.text;
+
+    // 估算字符宽度 (中文字符约等于字号宽度的0.9倍)
+    const charWidth = textConfig.size * 0.9;
+    const maxCharsPerLine = Math.floor(bounds.width / charWidth);
+
+    // 如果单行文字超出安全区宽度，自动换行
+    if (maxCharsPerLine > 0) {
+        const lines = text.split('\n');
+        const newLines = [];
+
+        for (const line of lines) {
+            if (line.length <= maxCharsPerLine) {
+                newLines.push(line);
+            } else {
+                // 需要换行
+                let remaining = line;
+                while (remaining.length > maxCharsPerLine) {
+                    newLines.push(remaining.substring(0, maxCharsPerLine));
+                    remaining = remaining.substring(maxCharsPerLine);
+                }
+                if (remaining) {
+                    newLines.push(remaining);
+                }
+            }
+        }
+
+        textConfig.text = newLines.join('\n');
+    }
+
+    // 检查Y位置是否在安全区内
+    if (textConfig.y < bounds.top) {
+        textConfig.y = bounds.top;
+    }
+
+    // 计算文字总高度
+    const lineCount = (textConfig.text.match(/\n/g) || []).length + 1;
+    const lineHeight = textConfig.size * 1.5;
+    const totalTextHeight = lineCount * lineHeight;
+
+    // 如果超出底部安全区，缩小字体
+    if (textConfig.y + totalTextHeight > bounds.bottom) {
+        const availableHeight = bounds.bottom - textConfig.y;
+        if (availableHeight > 0 && totalTextHeight > availableHeight) {
+            const scaleFactor = availableHeight / totalTextHeight;
+            const newSize = Math.max(20, Math.floor(textConfig.size * scaleFactor));
+            textConfig.size = newSize;
+        }
+    }
+}
+
+function applyAutoFitToAllSections() {
+    if (!state.safeZone.autoFit) return;
+    ['primary', 'secondary', 'tertiary', 'body'].forEach(section => {
+        autoFitTextToSafeZone(section);
+    });
+    syncUIFromState();
+    updatePreview();
 }
 
 // ===== Canvas Controls =====
@@ -508,11 +609,11 @@ window.applyPresetTemplate = function(index) {
         state.canvas.backgroundColor = config.canvas.background_color || null;
     }
 
-    // Apply text sections
-    applyPresetTextConfig('primary', config.title_primary);
-    applyPresetTextConfig('secondary', config.title_secondary);
-    applyPresetTextConfig('tertiary', config.title_tertiary);
-    applyPresetTextConfig('body', config.body_text);
+    // Apply text sections (支持两种格式: primary/title_primary)
+    applyPresetTextConfig('primary', config.primary || config.title_primary);
+    applyPresetTextConfig('secondary', config.secondary || config.title_secondary);
+    applyPresetTextConfig('tertiary', config.tertiary || config.title_tertiary);
+    applyPresetTextConfig('body', config.body || config.body_text);
 
     // Update UI
     syncUIFromState();
@@ -528,50 +629,60 @@ window.applyPresetTemplate = function(index) {
 function applyPresetTextConfig(section, config) {
     if (!config) {
         state[section].enabled = false;
+        state[section].text = '';
         return;
     }
 
-    state[section].enabled = true;
+    // 支持 enabled 属性，如果未定义则默认为 true
+    state[section].enabled = config.enabled !== false;
     state[section].text = config.text || '';
-    state[section].font = config.font_family || 'msyh';
-    state[section].size = config.font_size || 48;
+    // 兼容两种格式: font/font_family, size/font_size, etc.
+    state[section].font = config.font || config.font_family || 'msyh';
+    state[section].size = config.size || config.font_size || 48;
     state[section].color = config.color || '#000000';
-    state[section].x = config.position_x || null;
-    state[section].y = config.position_y || 100;
+    state[section].x = config.x ?? config.position_x ?? null;
+    state[section].y = config.y ?? config.position_y ?? 100;
     state[section].align = config.align || 'center';
-    state[section].bold = config.font_weight === 'bold';
+    state[section].bold = config.bold ?? (config.font_weight === 'bold');
     state[section].italic = config.italic || false;
 
-    // Stroke
+    // Stroke - 兼容两种格式
     if (config.stroke) {
         state[section].stroke = {
             enabled: config.stroke.enabled || false,
             color: config.stroke.color || '#000000',
             width: config.stroke.width || 2
         };
+    } else {
+        state[section].stroke = { enabled: false, color: '#000000', width: 2 };
     }
 
-    // Shadow
+    // Shadow - 兼容两种格式: x/offset_x, y/offset_y
     if (config.shadow) {
         state[section].shadow = {
             enabled: config.shadow.enabled || false,
             color: config.shadow.color || '#333333',
             blur: config.shadow.blur || 2,
-            x: config.shadow.offset_x || 3,
-            y: config.shadow.offset_y || 3
+            x: config.shadow.x ?? config.shadow.offset_x ?? 3,
+            y: config.shadow.y ?? config.shadow.offset_y ?? 3
         };
+    } else {
+        state[section].shadow = { enabled: false, color: '#333333', blur: 2, x: 3, y: 3 };
     }
 
-    // Background block
-    if (config.background_block) {
+    // Background block - 兼容两种格式: bgBlock/background_block
+    const bgConfig = config.bgBlock || config.background_block;
+    if (bgConfig) {
         state[section].bgBlock = {
-            enabled: config.background_block.enabled || false,
-            color: config.background_block.color || '#FFFF00',
-            opacity: config.background_block.opacity || 200,
-            paddingX: config.background_block.padding_x || 20,
-            paddingY: config.background_block.padding_y || 10,
-            radius: config.background_block.border_radius || 8
+            enabled: bgConfig.enabled || false,
+            color: bgConfig.color || '#FFFF00',
+            opacity: bgConfig.opacity || 200,
+            paddingX: bgConfig.paddingX ?? bgConfig.padding_x ?? 20,
+            paddingY: bgConfig.paddingY ?? bgConfig.padding_y ?? 10,
+            radius: bgConfig.radius ?? bgConfig.border_radius ?? 8
         };
+    } else {
+        state[section].bgBlock = { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8 };
     }
 }
 

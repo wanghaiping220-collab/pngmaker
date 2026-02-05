@@ -294,6 +294,13 @@ input, textarea, select, button {
     color: var(--text-secondary);
 }
 
+.form-hint {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
 input[type="text"],
 input[type="number"],
 textarea,
