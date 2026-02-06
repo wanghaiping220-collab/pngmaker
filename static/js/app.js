@@ -557,16 +557,22 @@ function updateFontSelects() {
 
 // ===== Preset Templates =====
 async function loadPresetTemplates() {
+    console.log('[Preset] Loading preset templates...');
     try {
         const response = await fetch(`${API_BASE}/templates/presets`);
         const data = await response.json();
 
+        console.log('[Preset] Received data:', data);
+
         if (data.presets && data.presets.length > 0) {
             state.presetTemplates = data.presets;
+            console.log('[Preset] Loaded', state.presetTemplates.length, 'presets');
             renderPresetTemplates();
+        } else {
+            console.warn('[Preset] No presets in response');
         }
     } catch (error) {
-        console.error('Failed to load preset templates:', error);
+        console.error('[Preset] Failed to load:', error);
     }
 }
 
@@ -597,9 +603,15 @@ function renderPresetTemplates() {
 }
 
 window.applyPresetTemplate = function(index) {
-    const preset = state.presetTemplates[index];
-    if (!preset || !preset.config) return;
+    console.log('[Preset] Applying index:', index, 'Total presets:', state.presetTemplates.length);
 
+    const preset = state.presetTemplates[index];
+    if (!preset || !preset.config) {
+        console.error('[Preset] Invalid preset at index:', index, 'preset:', preset);
+        return;
+    }
+
+    console.log('[Preset] Selected:', preset.name);
     const config = preset.config;
 
     // Apply canvas settings
@@ -627,7 +639,10 @@ window.applyPresetTemplate = function(index) {
 };
 
 function applyPresetTextConfig(section, config) {
+    console.log(`[Preset] Applying ${section}:`, config);
+
     if (!config) {
+        console.log(`[Preset] ${section}: disabled (no config)`);
         state[section].enabled = false;
         state[section].text = '';
         return;
@@ -636,6 +651,8 @@ function applyPresetTextConfig(section, config) {
     // 支持 enabled 属性，如果未定义则默认为 true
     state[section].enabled = config.enabled !== false;
     state[section].text = config.text || '';
+
+    console.log(`[Preset] ${section}: enabled=${state[section].enabled}, text="${state[section].text.substring(0, 20)}..."`);
     // 兼容两种格式: font/font_family, size/font_size, etc.
     state[section].font = config.font || config.font_family || 'msyh';
     state[section].size = config.size || config.font_size || 48;
