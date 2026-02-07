@@ -209,6 +209,7 @@ const $$ = (selector) => document.querySelectorAll(selector);
 
 // ===== Initialization =====
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     initNavigation();
     initCanvasControls();
     initPlatformPresets();
@@ -231,6 +232,52 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTemplates();
     loadHistory();
 });
+
+// ===== Theme Management =====
+function initTheme() {
+    // 从 localStorage 获取保存的主题设置
+    const savedTheme = localStorage.getItem('theme') || 'system';
+    applyTheme(savedTheme);
+
+    // 绑定主题切换按钮事件
+    $$('.theme-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const theme = btn.dataset.theme;
+            applyTheme(theme);
+            localStorage.setItem('theme', theme);
+        });
+    });
+
+    // 监听系统主题变化
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            const currentTheme = localStorage.getItem('theme') || 'system';
+            if (currentTheme === 'system') {
+                applyTheme('system');
+            }
+        });
+    }
+}
+
+function applyTheme(theme) {
+    // 更新按钮状态
+    $$('.theme-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === theme);
+    });
+
+    // 确定实际应用的主题
+    let effectiveTheme = theme;
+    if (theme === 'system') {
+        effectiveTheme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // 应用主题
+    if (effectiveTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+        document.documentElement.removeAttribute('data-theme');
+    }
+}
 
 // ===== Navigation =====
 function initNavigation() {
@@ -951,6 +998,205 @@ function initPreviewControls() {
 
     // Refresh preview button
     $('#previewBtn').addEventListener('click', updatePreview);
+
+    // Initialize text element drag and resize
+    initTextElementInteraction();
+}
+
+// ===== Text Element Drag & Resize =====
+let selectedElement = null;
+let dragState = {
+    isDragging: false,
+    isResizing: false,
+    startX: 0,
+    startY: 0,
+    startLeft: 0,
+    startTop: 0,
+    startFontSize: 0,
+    section: null
+};
+
+function initTextElementInteraction() {
+    const canvas = $('#previewCanvas');
+
+    // Click on canvas to deselect
+    canvas.addEventListener('click', (e) => {
+        if (e.target === canvas || e.target.classList.contains('safe-zone-overlay')) {
+            deselectAllElements();
+        }
+    });
+
+    // Setup interaction for each text element
+    ['primary', 'secondary', 'tertiary', 'body'].forEach(section => {
+        const element = $(`#preview-${section}`);
+        if (element) {
+            setupTextElementInteraction(element, section);
+        }
+    });
+
+    // Global mouse move and up handlers
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+}
+
+function setupTextElementInteraction(element, section) {
+    // Add resize handles
+    addResizeHandles(element);
+
+    // Click to select
+    element.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectElement(element, section);
+    });
+
+    // Mousedown to start drag
+    element.addEventListener('mousedown', (e) => {
+        if (e.target.classList.contains('resize-handle')) {
+            // Start resize
+            e.stopPropagation();
+            startResize(e, element, section);
+        } else {
+            // Start drag
+            e.stopPropagation();
+            startDrag(e, element, section);
+        }
+    });
+}
+
+function addResizeHandles(element) {
+    // Remove existing handles
+    element.querySelectorAll('.resize-handle').forEach(h => h.remove());
+
+    // Add font size handle (bottom center)
+    const fontHandle = document.createElement('div');
+    fontHandle.className = 'resize-handle font-size';
+    fontHandle.title = '拖动调整字号';
+    element.appendChild(fontHandle);
+}
+
+function selectElement(element, section) {
+    deselectAllElements();
+    element.classList.add('selected');
+    selectedElement = { element, section };
+
+    // Highlight corresponding config section
+    const configSection = document.querySelector(`.config-section:has(#${section}Enabled)`);
+    if (configSection) {
+        configSection.style.boxShadow = '0 0 0 2px var(--primary-color)';
+    }
+}
+
+function deselectAllElements() {
+    $$('.text-element').forEach(el => el.classList.remove('selected'));
+    $$('.config-section').forEach(s => s.style.boxShadow = '');
+    selectedElement = null;
+}
+
+function startDrag(e, element, section) {
+    const canvas = $('#previewCanvas');
+    const canvasRect = canvas.getBoundingClientRect();
+
+    dragState = {
+        isDragging: true,
+        isResizing: false,
+        startX: e.clientX,
+        startY: e.clientY,
+        startLeft: state[section].x !== null ? state[section].x : (state.canvas.width / 2),
+        startTop: state[section].y,
+        section: section
+    };
+
+    element.classList.add('dragging');
+    selectElement(element, section);
+}
+
+function startResize(e, element, section) {
+    dragState = {
+        isDragging: false,
+        isResizing: true,
+        startX: e.clientX,
+        startY: e.clientY,
+        startFontSize: state[section].size,
+        section: section
+    };
+
+    element.classList.add('dragging');
+    selectElement(element, section);
+}
+
+function handleMouseMove(e) {
+    if (!dragState.isDragging && !dragState.isResizing) return;
+
+    const section = dragState.section;
+    const canvas = $('#previewCanvas');
+    const canvasRect = canvas.getBoundingClientRect();
+    const scale = state.zoom;
+
+    if (dragState.isDragging) {
+        // Calculate new position
+        const deltaX = (e.clientX - dragState.startX) / scale;
+        const deltaY = (e.clientY - dragState.startY) / scale;
+
+        let newX = dragState.startLeft + deltaX;
+        let newY = dragState.startTop + deltaY;
+
+        // Constrain to canvas bounds
+        newX = Math.max(0, Math.min(newX, state.canvas.width));
+        newY = Math.max(0, Math.min(newY, state.canvas.height));
+
+        // Update state
+        state[section].x = Math.round(newX);
+        state[section].y = Math.round(newY);
+
+        // Update UI inputs
+        const xInput = $(`#${section}X`);
+        const yInput = $(`#${section}Y`);
+        if (xInput) xInput.value = state[section].x;
+        if (yInput) yInput.value = state[section].y;
+
+        // Update preview
+        updateTextPreview(section, `#preview-${section}`);
+    }
+
+    if (dragState.isResizing) {
+        // Calculate font size change based on vertical movement
+        const deltaY = (e.clientY - dragState.startY) / scale;
+        let newSize = dragState.startFontSize + Math.round(deltaY / 2);
+
+        // Constrain font size
+        newSize = Math.max(12, Math.min(newSize, 200));
+
+        // Update state
+        state[section].size = newSize;
+
+        // Update UI input
+        const sizeInput = $(`#${section}Size`);
+        if (sizeInput) sizeInput.value = newSize;
+
+        // Update preview
+        updateTextPreview(section, `#preview-${section}`);
+    }
+}
+
+function handleMouseUp(e) {
+    if (dragState.isDragging || dragState.isResizing) {
+        const section = dragState.section;
+        const element = $(`#preview-${section}`);
+        if (element) {
+            element.classList.remove('dragging');
+        }
+
+        dragState = {
+            isDragging: false,
+            isResizing: false,
+            startX: 0,
+            startY: 0,
+            startLeft: 0,
+            startTop: 0,
+            startFontSize: 0,
+            section: null
+        };
+    }
 }
 
 function updatePreviewZoom() {
@@ -1018,6 +1264,7 @@ function updateTextPreview(sectionKey, elementSelector) {
     }
 
     // Font
+    element.style.fontFamily = getFontFamily(config.font);
     element.style.fontSize = `${config.size}px`;
     element.style.color = config.color;
     element.style.fontWeight = config.bold ? 'bold' : 'normal';
@@ -1083,6 +1330,11 @@ function updateTextPreview(sectionKey, elementSelector) {
         if (config.x === null || config.x === undefined) {
             element.style.transform = 'none';
         }
+    }
+
+    // Ensure resize handles exist
+    if (!element.querySelector('.resize-handle')) {
+        addResizeHandles(element);
     }
 }
 
@@ -2056,6 +2308,35 @@ function hideLoading() {
 }
 
 // ===== Utility Functions =====
+
+// 将字体值转换为 CSS font-family
+function getFontFamily(fontValue) {
+    // 内置字体映射
+    const builtinFonts = {
+        'default': 'system-ui, -apple-system, "Segoe UI", sans-serif',
+        'msyh': '"Microsoft YaHei", "微软雅黑", sans-serif',
+        'simhei': 'SimHei, "黑体", sans-serif',
+        'simsun': 'SimSun, "宋体", serif',
+        'kaiti': 'KaiTi, "楷体", serif'
+    };
+
+    // 如果是内置字体，返回对应的 font-family
+    if (builtinFonts[fontValue]) {
+        return builtinFonts[fontValue];
+    }
+
+    // 如果是系统字体路径，尝试从 state.systemFonts 中查找字体名称
+    if (fontValue && fontValue.includes('/')) {
+        const systemFont = state.systemFonts.find(f => f.path === fontValue);
+        if (systemFont) {
+            return `"${systemFont.name}", sans-serif`;
+        }
+    }
+
+    // 默认返回 sans-serif
+    return 'sans-serif';
+}
+
 function hexToRgb(hex) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
