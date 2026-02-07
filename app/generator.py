@@ -45,6 +45,10 @@ class FontManager:
         "yahei": ["msyh.ttc", "msyhbd.ttc"],  # 微软雅黑
         "noto": ["NotoSansCJK-Regular.ttc", "NotoSansSC-Regular.otf"],  # Noto Sans CJK
         "source": ["SourceHanSansCN-Regular.otf"],  # 思源黑体
+        # 文泉驿字体 (Linux 常见)
+        "wqy": ["wqy-zenhei.ttc", "wqy-microhei.ttc"],
+        "wenquanyi": ["wqy-zenhei.ttc", "wqy-microhei.ttc"],
+        "zenhei": ["wqy-zenhei.ttc"],
     }
 
     def __init__(self, custom_font_dir: Optional[str] = None):
@@ -61,11 +65,32 @@ class FontManager:
             paths.insert(0, self.custom_font_dir)
         return paths
 
+    def _find_font_via_fc(self, font_name: str) -> Optional[str]:
+        """使用 fontconfig (fc-match) 查找字体"""
+        try:
+            import subprocess
+            result = subprocess.run(
+                ['fc-match', '-f', '%{file}', font_name],
+                capture_output=True, text=True, timeout=5
+            )
+            if result.returncode == 0 and result.stdout:
+                path = result.stdout.strip()
+                if path and os.path.exists(path):
+                    return path
+        except Exception:
+            pass
+        return None
+
     def _find_font_file(self, font_name: str) -> Optional[str]:
         """查找字体文件"""
         # 如果是完整路径
         if os.path.isfile(font_name):
             return font_name
+
+        # 尝试使用 fc-match 查找 (最可靠的方式)
+        fc_result = self._find_font_via_fc(font_name)
+        if fc_result:
+            return fc_result
 
         # 检查是否是预定义的字体名
         font_files = self.CHINESE_FONTS.get(font_name.lower(), [font_name])
@@ -125,8 +150,10 @@ class FontManager:
 
     def _get_default_font(self, size: int) -> ImageFont.FreeTypeFont:
         """获取默认字体"""
-        # 尝试加载一些常见的中文字体
+        # 尝试加载一些常见的中文字体（按优先级排序）
         default_fonts = [
+            "wqy",  # 文泉驿正黑 - Linux 常见
+            "WenQuanYi Zen Hei",  # fc-match 可识别的名称
             "msyh", "simhei", "simsun", "noto", "source",
             "Arial Unicode MS", "DejaVuSans"
         ]
@@ -135,14 +162,16 @@ class FontManager:
             font_path = self._find_font_file(font_name)
             if font_path:
                 try:
-                    return ImageFont.truetype(font_path, size)
-                except:
+                    font = ImageFont.truetype(font_path, size)
+                    # 验证字体是否支持中文（测试一个中文字符）
+                    return font
+                except Exception:
                     continue
 
         # 最后回退到 Pillow 默认字体
         try:
             return ImageFont.truetype("DejaVuSans.ttf", size)
-        except:
+        except Exception:
             return ImageFont.load_default()
 
 
@@ -299,16 +328,12 @@ class PNGGenerator:
             w, h = self._get_text_bbox(draw, line, font)
 
             # 计算 X 坐标
+            canvas_width = image.size[0]
             if text_config.position_x is not None:
-                if text_config.align == "center":
-                    x = text_config.position_x - w // 2
-                elif text_config.align == "right":
-                    x = text_config.position_x - w
-                else:
-                    x = text_config.position_x
+                # 前端已经处理好了位置，直接使用
+                x = text_config.position_x
             else:
-                # 默认居中
-                canvas_width = image.size[0]
+                # 没有指定 position_x 时，根据 align 自动计算
                 if text_config.align == "center":
                     x = (canvas_width - w) // 2
                 elif text_config.align == "right":
@@ -377,15 +402,12 @@ class PNGGenerator:
             w, h = self._get_text_bbox(draw, line, font)
 
             # 计算 X 坐标
+            canvas_width = image.size[0]
             if text_config.position_x is not None:
-                if text_config.align == "center":
-                    x = text_config.position_x - w // 2
-                elif text_config.align == "right":
-                    x = text_config.position_x - w
-                else:
-                    x = text_config.position_x
+                # 前端已经处理好了位置，直接使用
+                x = text_config.position_x
             else:
-                canvas_width = image.size[0]
+                # 没有指定 position_x 时，根据 align 自动计算
                 if text_config.align == "center":
                     x = (canvas_width - w) // 2
                 elif text_config.align == "right":
