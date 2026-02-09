@@ -22,7 +22,11 @@ const state = {
         italic: false,
         stroke: { enabled: false, color: '#000000', width: 2 },
         shadow: { enabled: false, color: '#333333', blur: 2, x: 3, y: 3 },
-        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 }
+        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 },
+        boxWidth: null,   // 文字框宽度，null=自动
+        boxHeight: null,  // 文字框高度，null=自动
+        autoScale: true,  // 超出高度时自动缩放字号
+        minFontSize: 12   // 自动缩放最小字号
     },
     secondary: {
         enabled: true,
@@ -37,7 +41,11 @@ const state = {
         italic: true,
         stroke: { enabled: false, color: '#000000', width: 2 },
         shadow: { enabled: false, color: '#333333', blur: 2, x: 3, y: 3 },
-        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 }
+        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 },
+        boxWidth: null,
+        boxHeight: null,
+        autoScale: true,
+        minFontSize: 12
     },
     tertiary: {
         enabled: false,
@@ -52,7 +60,11 @@ const state = {
         italic: false,
         stroke: { enabled: false, color: '#000000', width: 2 },
         shadow: { enabled: false, color: '#333333', blur: 2, x: 3, y: 3 },
-        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 }
+        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 },
+        boxWidth: null,
+        boxHeight: null,
+        autoScale: true,
+        minFontSize: 12
     },
     body: {
         enabled: true,
@@ -67,7 +79,11 @@ const state = {
         italic: true,
         stroke: { enabled: false, color: '#000000', width: 2 },
         shadow: { enabled: false, color: '#333333', blur: 2, x: 3, y: 3 },
-        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 }
+        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 },
+        boxWidth: null,
+        boxHeight: null,
+        autoScale: true,
+        minFontSize: 12
     },
     output: {
         filename: 'output.png'
@@ -749,6 +765,12 @@ function applyPresetTextConfig(section, config) {
     } else {
         state[section].bgBlock = { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 };
     }
+
+    // 文字框设置 - 兼容两种格式
+    state[section].boxWidth = config.boxWidth ?? config.max_width ?? null;
+    state[section].boxHeight = config.boxHeight ?? config.box_height ?? null;
+    state[section].autoScale = config.autoScale ?? config.auto_scale ?? true;
+    state[section].minFontSize = config.minFontSize ?? config.min_font_size ?? 12;
 }
 
 // ===== Text Controls =====
@@ -982,6 +1004,41 @@ function initAdvancedEffects(section) {
     if (bgBlockWidth) {
         bgBlockWidth.addEventListener('input', (e) => {
             state[section].bgBlock.width = parseInt(e.target.value) || 0;
+            updatePreview();
+        });
+    }
+
+    // 文字框设置
+    const boxWidth = $(`#${section}BoxWidth`);
+    if (boxWidth) {
+        boxWidth.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            state[section].boxWidth = val > 0 ? val : null;
+            updatePreview();
+        });
+    }
+
+    const boxHeight = $(`#${section}BoxHeight`);
+    if (boxHeight) {
+        boxHeight.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            state[section].boxHeight = val > 0 ? val : null;
+            updatePreview();
+        });
+    }
+
+    const autoScale = $(`#${section}AutoScale`);
+    if (autoScale) {
+        autoScale.addEventListener('change', (e) => {
+            state[section].autoScale = e.target.checked;
+            updatePreview();
+        });
+    }
+
+    const minFontSize = $(`#${section}MinFontSize`);
+    if (minFontSize) {
+        minFontSize.addEventListener('input', (e) => {
+            state[section].minFontSize = parseInt(e.target.value) || 12;
             updatePreview();
         });
     }
@@ -1384,6 +1441,72 @@ function updatePreviewZoom() {
     $('#zoomLevel').textContent = `${Math.round(state.zoom * 100)}%`;
 }
 
+// ===== Text Measurement Utilities (使用Canvas 2D API，无需付费) =====
+const textMeasureCanvas = document.createElement('canvas');
+const textMeasureCtx = textMeasureCanvas.getContext('2d');
+
+function measureTextWidth(text, fontFamily, fontSize, bold = false, italic = false) {
+    const fontStyle = `${italic ? 'italic ' : ''}${bold ? 'bold ' : ''}${fontSize}px ${fontFamily}`;
+    textMeasureCtx.font = fontStyle;
+    return textMeasureCtx.measureText(text).width;
+}
+
+function wrapTextToWidth(text, fontFamily, fontSize, maxWidth, bold = false, italic = false) {
+    if (!maxWidth || maxWidth <= 0) {
+        return text.split('\n');
+    }
+
+    const lines = [];
+    const paragraphs = text.split('\n');
+
+    for (const paragraph of paragraphs) {
+        if (!paragraph) {
+            lines.push('');
+            continue;
+        }
+
+        let currentLine = '';
+        for (const char of paragraph) {
+            const testLine = currentLine + char;
+            const width = measureTextWidth(testLine, fontFamily, fontSize, bold, italic);
+
+            if (width <= maxWidth) {
+                currentLine = testLine;
+            } else {
+                if (currentLine) {
+                    lines.push(currentLine);
+                }
+                currentLine = char;
+            }
+        }
+        if (currentLine) {
+            lines.push(currentLine);
+        }
+    }
+
+    return lines.length > 0 ? lines : [''];
+}
+
+function calculateAutoScaledFontSize(text, initialSize, boxWidth, boxHeight, minSize, fontFamily, bold, italic, lineHeight = 1.5) {
+    if (!boxHeight || boxHeight <= 0) {
+        return initialSize;
+    }
+
+    let fontSize = initialSize;
+
+    while (fontSize > minSize) {
+        const lines = wrapTextToWidth(text, fontFamily, fontSize, boxWidth, bold, italic);
+        const totalHeight = lines.length * fontSize * lineHeight;
+
+        if (totalHeight <= boxHeight) {
+            return fontSize;
+        }
+        fontSize--;
+    }
+
+    return minSize;
+}
+
 function updatePreview() {
     const canvas = $('#previewCanvas');
     const { width, height, backgroundColor } = state.canvas;
@@ -1427,107 +1550,189 @@ function updateTextPreview(sectionKey, elementSelector) {
     }
 
     element.style.display = 'block';
-    element.textContent = config.text;
 
-    // Position
-    element.style.top = `${config.y}px`;
-
-    // 设置宽度以支持自动换行
     const canvasWidth = state.canvas.width;
-    const padding = 50; // 左右边距
+    const fontFamily = getFontFamily(config.font);
+    const lineHeight = 1.5;
 
-    // Handle X position and width
-    if (config.x !== null && config.x !== undefined) {
-        element.style.left = `${config.x}px`;
-        element.style.right = 'auto';
-        element.style.transform = 'none';
-        // 当指定了 X 位置时，设置最大宽度为从 X 到画布右边的距离
-        element.style.width = 'auto';
-        element.style.maxWidth = `${canvasWidth - config.x - padding}px`;
-    } else {
-        element.style.left = '0';
-        element.style.right = '0';
-        // 居中模式下，设置固定宽度以支持换行
-        element.style.width = `${canvasWidth}px`;
-        element.style.maxWidth = '100%';
-    }
+    // 计算文本框宽度（用于自动换行）
+    let boxWidth = config.boxWidth || null;
+    let boxHeight = config.boxHeight || null;
 
-    // Font
-    element.style.fontFamily = getFontFamily(config.font);
-    element.style.fontSize = `${config.size}px`;
-    element.style.color = config.color;
-    element.style.fontWeight = config.bold ? 'bold' : 'normal';
-    element.style.fontStyle = config.italic ? 'italic' : 'normal';
-
-    // Align
-    element.style.textAlign = config.align;
-    if (config.x === null || config.x === undefined) {
-        if (config.align === 'left') {
-            element.style.paddingLeft = '50px';
-            element.style.paddingRight = '0';
-        } else if (config.align === 'right') {
-            element.style.paddingLeft = '0';
-            element.style.paddingRight = '50px';
+    // 如果没有指定 boxWidth，根据位置计算
+    if (!boxWidth) {
+        if (config.x !== null && config.x !== undefined) {
+            boxWidth = canvasWidth - config.x - 50; // 从X位置到右边距
         } else {
-            element.style.paddingLeft = '0';
-            element.style.paddingRight = '0';
+            boxWidth = canvasWidth - 100; // 默认左右各50边距
         }
-    } else {
-        element.style.paddingLeft = '0';
-        element.style.paddingRight = '0';
     }
 
-    // Effects
-    let textShadow = [];
-
-    if (config.shadow && config.shadow.enabled) {
-        textShadow.push(`${config.shadow.x}px ${config.shadow.y}px ${config.shadow.blur}px ${config.shadow.color}`);
-    }
-
-    if (config.stroke && config.stroke.enabled) {
-        // Simulate stroke with multiple shadows
-        const w = config.stroke.width;
-        const c = config.stroke.color;
-        textShadow.push(
-            `${w}px 0 0 ${c}`,
-            `-${w}px 0 0 ${c}`,
-            `0 ${w}px 0 ${c}`,
-            `0 -${w}px 0 ${c}`
+    // 计算自动缩放字号
+    let effectiveFontSize = config.size;
+    if (boxHeight && config.autoScale !== false) {
+        const minSize = config.minFontSize || 12;
+        effectiveFontSize = calculateAutoScaledFontSize(
+            config.text, config.size, boxWidth, boxHeight,
+            minSize, fontFamily, config.bold, config.italic, lineHeight
         );
     }
 
-    element.style.textShadow = textShadow.join(', ') || 'none';
+    // 文字换行处理
+    const lines = wrapTextToWidth(config.text, fontFamily, effectiveFontSize, boxWidth, config.bold, config.italic);
 
-    // Background block (simplified for preview)
+    // 清除旧内容，保留 resize-handle 和 position-indicator
+    const handles = element.querySelectorAll('.resize-handle, .position-indicator');
+    element.innerHTML = '';
+    handles.forEach(h => element.appendChild(h));
+
+    // 构建文字阴影样式
+    let textShadow = [];
+    if (config.shadow && config.shadow.enabled) {
+        textShadow.push(`${config.shadow.x}px ${config.shadow.y}px ${config.shadow.blur}px ${config.shadow.color}`);
+    }
+    if (config.stroke && config.stroke.enabled) {
+        const w = config.stroke.width;
+        const c = config.stroke.color;
+        textShadow.push(`${w}px 0 0 ${c}`, `-${w}px 0 0 ${c}`, `0 ${w}px 0 ${c}`, `0 -${w}px 0 ${c}`);
+    }
+    const textShadowStyle = textShadow.join(', ') || 'none';
+
+    // 计算每行位置并渲染（与后端逻辑一致）
+    let currentY = 0;
+    const lineElements = [];
+
+    lines.forEach((line, index) => {
+        const lineWidth = measureTextWidth(line || ' ', fontFamily, effectiveFontSize, config.bold, config.italic);
+        const lineHeightPx = effectiveFontSize * lineHeight;
+
+        // 计算 X 坐标（与后端逻辑完全一致）
+        let lineX;
+        if (config.x !== null && config.x !== undefined) {
+            // 有指定位置时，直接使用
+            lineX = 0; // 相对于元素的位置
+        } else {
+            // 没有指定位置时，根据 align 计算每行的居中位置
+            if (config.align === 'center') {
+                lineX = (canvasWidth - lineWidth) / 2;
+            } else if (config.align === 'right') {
+                lineX = canvasWidth - lineWidth - 50;
+            } else {
+                lineX = 50; // left
+            }
+        }
+
+        // 创建行元素
+        const lineSpan = document.createElement('div');
+        lineSpan.className = 'text-line';
+        lineSpan.textContent = line || '\u00A0'; // 空行用 &nbsp;
+        lineSpan.style.cssText = `
+            position: absolute;
+            left: ${config.x !== null ? 0 : lineX}px;
+            top: ${currentY}px;
+            font-family: ${fontFamily};
+            font-size: ${effectiveFontSize}px;
+            font-weight: ${config.bold ? 'bold' : 'normal'};
+            font-style: ${config.italic ? 'italic' : 'normal'};
+            color: ${config.color};
+            white-space: nowrap;
+            text-shadow: ${textShadowStyle};
+            line-height: ${lineHeight};
+        `;
+
+        element.appendChild(lineSpan);
+        lineElements.push({ element: lineSpan, width: lineWidth, x: lineX });
+
+        currentY += lineHeightPx;
+    });
+
+    // 计算文字整体边界框
+    const totalHeight = currentY;
+    let minX = Infinity, maxX = 0;
+    lineElements.forEach(le => {
+        const x = config.x !== null ? config.x : le.x;
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x + le.width);
+    });
+    const totalWidth = maxX - minX;
+
+    // 设置元素位置
+    element.style.top = `${config.y}px`;
+    element.style.height = `${totalHeight}px`;
+
+    if (config.x !== null && config.x !== undefined) {
+        element.style.left = `${config.x}px`;
+        element.style.width = `${totalWidth}px`;
+        element.style.transform = 'none';
+    } else {
+        // 当没有指定X时，设置元素宽度为画布宽度
+        element.style.left = '0';
+        element.style.width = `${canvasWidth}px`;
+        element.style.transform = 'none';
+    }
+
+    // 文字框高度指示（如果设置了）
+    if (boxHeight) {
+        element.style.minHeight = `${boxHeight}px`;
+        element.style.border = '1px dashed rgba(100, 100, 255, 0.3)';
+    } else {
+        element.style.minHeight = '';
+        element.style.border = '';
+    }
+
+    // 背景色块处理
+    element.style.backgroundColor = 'transparent';
+    element.style.padding = '0';
+    element.style.borderRadius = '0';
+
     if (config.bgBlock && config.bgBlock.enabled) {
         const opacity = Math.round(config.bgBlock.opacity / 255 * 100) / 100;
         const rgb = hexToRgb(config.bgBlock.color);
-        element.style.backgroundColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`;
-        element.style.padding = `${config.bgBlock.paddingY}px ${config.bgBlock.paddingX}px`;
-        element.style.borderRadius = `${config.bgBlock.radius}px`;
-        element.style.display = 'inline-block';
 
-        // 如果设置了固定宽度，则应用
-        if (config.bgBlock.width && config.bgBlock.width > 0) {
-            element.style.width = `${config.bgBlock.width}px`;
-            element.style.boxSizing = 'border-box';
+        // 创建独立的背景色块元素
+        let bgElement = element.querySelector('.bg-block-layer');
+        if (!bgElement) {
+            bgElement = document.createElement('div');
+            bgElement.className = 'bg-block-layer';
+            element.insertBefore(bgElement, element.firstChild);
         }
 
-        if (config.x === null || config.x === undefined) {
-            element.style.left = '50%';
-            element.style.right = 'auto';
-            element.style.transform = 'translateX(-50%)';
+        // 计算背景色块尺寸
+        let bgWidth = config.bgBlock.width && config.bgBlock.width > 0
+            ? config.bgBlock.width
+            : totalWidth + config.bgBlock.paddingX * 2;
+        const bgHeight = totalHeight + config.bgBlock.paddingY * 2;
+
+        // 计算背景色块位置（相对于文字块居中）
+        let bgLeft;
+        if (config.x !== null && config.x !== undefined) {
+            bgLeft = -config.bgBlock.paddingX;
+        } else {
+            // 居中模式：背景块相对于文字居中
+            const textCenterX = (minX + maxX) / 2;
+            bgLeft = textCenterX - bgWidth / 2;
         }
+
+        bgElement.style.cssText = `
+            position: absolute;
+            left: ${bgLeft}px;
+            top: ${-config.bgBlock.paddingY}px;
+            width: ${bgWidth}px;
+            height: ${bgHeight}px;
+            background-color: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity});
+            border-radius: ${config.bgBlock.radius}px;
+            z-index: -1;
+            pointer-events: none;
+        `;
     } else {
-        element.style.backgroundColor = 'transparent';
-        element.style.padding = '0';
-        element.style.borderRadius = '0';
-        if (config.x === null || config.x === undefined) {
-            element.style.transform = 'none';
+        // 移除背景色块
+        const bgElement = element.querySelector('.bg-block-layer');
+        if (bgElement) {
+            bgElement.remove();
         }
     }
 
-    // Ensure resize handles exist
+    // 确保 resize handles 存在
     if (!element.querySelector('.resize-handle')) {
         addResizeHandles(element);
     }
@@ -1638,6 +1843,18 @@ function buildTextConfig(textState) {
     // X position
     if (textState.x !== null && textState.x !== undefined) {
         config.position_x = textState.x;
+    }
+
+    // 文字框宽度（用于自动换行）
+    if (textState.boxWidth && textState.boxWidth > 0) {
+        config.max_width = textState.boxWidth;
+    }
+
+    // 文字框高度和自动缩放
+    if (textState.boxHeight && textState.boxHeight > 0) {
+        config.box_height = textState.boxHeight;
+        config.auto_scale = textState.autoScale !== false;
+        config.min_font_size = textState.minFontSize || 12;
     }
 
     // Stroke
@@ -2237,6 +2454,19 @@ function syncSectionUI(section) {
 
     const bgBlockWidth = $(`#${section}BgBlockWidth`);
     if (bgBlockWidth) bgBlockWidth.value = s.bgBlock?.width || 0;
+
+    // 文字框设置
+    const boxWidth = $(`#${section}BoxWidth`);
+    if (boxWidth) boxWidth.value = s.boxWidth || '';
+
+    const boxHeight = $(`#${section}BoxHeight`);
+    if (boxHeight) boxHeight.value = s.boxHeight || '';
+
+    const autoScale = $(`#${section}AutoScale`);
+    if (autoScale) autoScale.checked = s.autoScale !== false;
+
+    const minFontSize = $(`#${section}MinFontSize`);
+    if (minFontSize) minFontSize.value = s.minFontSize || 12;
 }
 
 // ===== History =====

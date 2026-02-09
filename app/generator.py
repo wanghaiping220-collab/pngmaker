@@ -293,12 +293,43 @@ class PNGGenerator:
         # 合并背景层到主图像（背景在下）
         return Image.alpha_composite(bg_layer, image)
 
+    def _calculate_text_height(self, text: str, font: ImageFont.FreeTypeFont,
+                                max_width: Optional[int], draw: ImageDraw.ImageDraw,
+                                line_height: float = 1.5) -> int:
+        """计算文字在给定字体下的总高度"""
+        lines = self._wrap_text(text, font, max_width, draw)
+        total_height = 0
+        for line in lines:
+            _, h = self._get_text_bbox(draw, line or " ", font)
+            total_height += int(h * line_height)
+        return total_height
+
     def _draw_text_with_effects(self, image: Image.Image, text_config: TextConfig,
                                  draw: ImageDraw.ImageDraw) -> Image.Image:
         """绘制带特效的文字"""
+        font_size = text_config.font_size
+
+        # 自动缩放字号（如果设置了 box_height）
+        if text_config.box_height and text_config.auto_scale:
+            min_size = text_config.min_font_size
+            while font_size > min_size:
+                test_font = self.font_manager.get_font(
+                    text_config.font_family,
+                    font_size,
+                    bold=(text_config.font_weight == "bold"),
+                    italic=text_config.italic
+                )
+                text_height = self._calculate_text_height(
+                    text_config.text, test_font, text_config.max_width,
+                    draw, text_config.line_height
+                )
+                if text_height <= text_config.box_height:
+                    break
+                font_size -= 1
+
         font = self.font_manager.get_font(
             text_config.font_family,
-            text_config.font_size,
+            font_size,
             bold=(text_config.font_weight == "bold"),
             italic=text_config.italic
         )

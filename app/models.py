@@ -51,6 +51,11 @@ class TextConfig(BaseModel):
     line_height: float = Field(default=1.5, description="行高倍数")
     max_width: Optional[int] = Field(default=None, description="最大宽度，超出自动换行")
 
+    # 文字框尺寸（PS风格）
+    box_height: Optional[int] = Field(default=None, description="文字框高度，超出时自动缩放字号")
+    auto_scale: bool = Field(default=True, description="超出高度时是否自动缩放字号")
+    min_font_size: int = Field(default=12, ge=8, description="自动缩放时的最小字号")
+
     # 特效
     stroke: StrokeConfig = Field(default_factory=StrokeConfig)
     shadow: ShadowConfig = Field(default_factory=ShadowConfig)
