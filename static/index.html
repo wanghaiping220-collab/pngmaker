@@ -368,9 +368,15 @@
                                                             <input type="number" id="primaryBgBlockPaddingY" value="10" min="0" max="100">
                                                         </div>
                                                     </div>
-                                                    <div class="form-group full-width">
-                                                        <label>圆角</label>
-                                                        <input type="number" id="primaryBgBlockRadius" value="8" min="0" max="50">
+                                                    <div class="form-row">
+                                                        <div class="form-group">
+                                                            <label>圆角</label>
+                                                            <input type="number" id="primaryBgBlockRadius" value="8" min="0" max="50">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label>宽度(0=自动)</label>
+                                                            <input type="number" id="primaryBgBlockWidth" value="0" min="0" max="2000">
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -495,7 +501,10 @@
                                                         <div class="form-group"><label>内边距X</label><input type="number" id="secondaryBgBlockPaddingX" value="20"></div>
                                                         <div class="form-group"><label>内边距Y</label><input type="number" id="secondaryBgBlockPaddingY" value="10"></div>
                                                     </div>
-                                                    <div class="form-group full-width"><label>圆角</label><input type="number" id="secondaryBgBlockRadius" value="8"></div>
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>圆角</label><input type="number" id="secondaryBgBlockRadius" value="8"></div>
+                                                        <div class="form-group"><label>宽度(0=自动)</label><input type="number" id="secondaryBgBlockWidth" value="0" min="0" max="2000"></div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -618,7 +627,10 @@
                                                         <div class="form-group"><label>内边距X</label><input type="number" id="tertiaryBgBlockPaddingX" value="20"></div>
                                                         <div class="form-group"><label>内边距Y</label><input type="number" id="tertiaryBgBlockPaddingY" value="10"></div>
                                                     </div>
-                                                    <div class="form-group full-width"><label>圆角</label><input type="number" id="tertiaryBgBlockRadius" value="8"></div>
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>圆角</label><input type="number" id="tertiaryBgBlockRadius" value="8"></div>
+                                                        <div class="form-group"><label>宽度(0=自动)</label><input type="number" id="tertiaryBgBlockWidth" value="0" min="0" max="2000"></div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -744,7 +756,10 @@
                                                         <div class="form-group"><label>内边距X</label><input type="number" id="bodyBgBlockPaddingX" value="25"></div>
                                                         <div class="form-group"><label>内边距Y</label><input type="number" id="bodyBgBlockPaddingY" value="12"></div>
                                                     </div>
-                                                    <div class="form-group full-width"><label>圆角</label><input type="number" id="bodyBgBlockRadius" value="10"></div>
+                                                    <div class="form-row">
+                                                        <div class="form-group"><label>圆角</label><input type="number" id="bodyBgBlockRadius" value="10"></div>
+                                                        <div class="form-group"><label>宽度(0=自动)</label><input type="number" id="bodyBgBlockWidth" value="0" min="0" max="2000"></div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -809,6 +824,14 @@
                                     <div class="text-element" id="preview-tertiary"></div>
                                     <div class="text-element" id="preview-body"></div>
                                 </div>
+                            </div>
+                            <!-- 键盘快捷键提示 -->
+                            <div class="shortcuts-hint" id="shortcutsHint">
+                                <span><kbd>↑↓←→</kbd> 移动</span>
+                                <span><kbd>Shift</kbd>+方向 快速移动</span>
+                                <span><kbd>+/-</kbd> 调整字号</span>
+                                <span><kbd>Del</kbd> 禁用</span>
+                                <span><kbd>Esc</kbd> 取消选择</span>
                             </div>
                         </div>
                         <div class="preview-footer">

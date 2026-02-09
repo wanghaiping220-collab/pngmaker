@@ -22,7 +22,7 @@ const state = {
         italic: false,
         stroke: { enabled: false, color: '#000000', width: 2 },
         shadow: { enabled: false, color: '#333333', blur: 2, x: 3, y: 3 },
-        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8 }
+        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 }
     },
     secondary: {
         enabled: true,
@@ -37,7 +37,7 @@ const state = {
         italic: true,
         stroke: { enabled: false, color: '#000000', width: 2 },
         shadow: { enabled: false, color: '#333333', blur: 2, x: 3, y: 3 },
-        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8 }
+        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 }
     },
     tertiary: {
         enabled: false,
@@ -52,7 +52,7 @@ const state = {
         italic: false,
         stroke: { enabled: false, color: '#000000', width: 2 },
         shadow: { enabled: false, color: '#333333', blur: 2, x: 3, y: 3 },
-        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8 }
+        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 }
     },
     body: {
         enabled: true,
@@ -67,7 +67,7 @@ const state = {
         italic: true,
         stroke: { enabled: false, color: '#000000', width: 2 },
         shadow: { enabled: false, color: '#333333', blur: 2, x: 3, y: 3 },
-        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8 }
+        bgBlock: { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 }
     },
     output: {
         filename: 'output.png'
@@ -743,10 +743,11 @@ function applyPresetTextConfig(section, config) {
             opacity: bgConfig.opacity || 200,
             paddingX: bgConfig.paddingX ?? bgConfig.padding_x ?? 20,
             paddingY: bgConfig.paddingY ?? bgConfig.padding_y ?? 10,
-            radius: bgConfig.radius ?? bgConfig.border_radius ?? 8
+            radius: bgConfig.radius ?? bgConfig.border_radius ?? 8,
+            width: bgConfig.width || 0
         };
     } else {
-        state[section].bgBlock = { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8 };
+        state[section].bgBlock = { enabled: false, color: '#FFFF00', opacity: 200, paddingX: 20, paddingY: 10, radius: 8, width: 0 };
     }
 }
 
@@ -976,6 +977,14 @@ function initAdvancedEffects(section) {
             updatePreview();
         });
     }
+
+    const bgBlockWidth = $(`#${section}BgBlockWidth`);
+    if (bgBlockWidth) {
+        bgBlockWidth.addEventListener('input', (e) => {
+            state[section].bgBlock.width = parseInt(e.target.value) || 0;
+            updatePreview();
+        });
+    }
 }
 
 // ===== Preview Controls =====
@@ -1019,6 +1028,9 @@ let dragState = {
 function initTextElementInteraction() {
     const canvas = $('#previewCanvas');
 
+    // Add alignment guides to canvas
+    addAlignmentGuides(canvas);
+
     // Click on canvas to deselect
     canvas.addEventListener('click', (e) => {
         if (e.target === canvas || e.target.classList.contains('safe-zone-overlay')) {
@@ -1037,6 +1049,113 @@ function initTextElementInteraction() {
     // Global mouse move and up handlers
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', handleKeyboardShortcuts);
+}
+
+function addAlignmentGuides(canvas) {
+    // Horizontal center guide
+    const hGuide = document.createElement('div');
+    hGuide.className = 'alignment-guide horizontal center-h';
+    hGuide.id = 'guide-center-h';
+    canvas.appendChild(hGuide);
+
+    // Vertical center guide
+    const vGuide = document.createElement('div');
+    vGuide.className = 'alignment-guide vertical center-v';
+    vGuide.id = 'guide-center-v';
+    canvas.appendChild(vGuide);
+}
+
+function handleKeyboardShortcuts(e) {
+    if (!selectedElement) return;
+
+    const section = selectedElement.section;
+    const step = e.shiftKey ? 10 : 1; // Shift for larger steps
+
+    switch(e.key) {
+        case 'ArrowUp':
+            e.preventDefault();
+            state[section].y = Math.max(0, state[section].y - step);
+            updatePositionInputs(section);
+            updateTextPreview(section, `#preview-${section}`);
+            break;
+        case 'ArrowDown':
+            e.preventDefault();
+            state[section].y = Math.min(state.canvas.height, state[section].y + step);
+            updatePositionInputs(section);
+            updateTextPreview(section, `#preview-${section}`);
+            break;
+        case 'ArrowLeft':
+            e.preventDefault();
+            if (state[section].x === null) {
+                state[section].x = Math.round(state.canvas.width / 2);
+            }
+            state[section].x = Math.max(0, state[section].x - step);
+            updatePositionInputs(section);
+            updateTextPreview(section, `#preview-${section}`);
+            break;
+        case 'ArrowRight':
+            e.preventDefault();
+            if (state[section].x === null) {
+                state[section].x = Math.round(state.canvas.width / 2);
+            }
+            state[section].x = Math.min(state.canvas.width, state[section].x + step);
+            updatePositionInputs(section);
+            updateTextPreview(section, `#preview-${section}`);
+            break;
+        case 'Escape':
+            deselectAllElements();
+            break;
+        case 'Delete':
+        case 'Backspace':
+            // Don't delete if user is typing in an input
+            if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+                return;
+            }
+            e.preventDefault();
+            state[section].enabled = false;
+            const checkbox = $(`#${section}Enabled`);
+            if (checkbox) checkbox.checked = false;
+            updatePreview();
+            deselectAllElements();
+            showToast(`已禁用 ${getSectionName(section)}`, 'info');
+            break;
+        case '+':
+        case '=':
+            e.preventDefault();
+            state[section].size = Math.min(200, state[section].size + step);
+            const sizeInputPlus = $(`#${section}Size`);
+            if (sizeInputPlus) sizeInputPlus.value = state[section].size;
+            updateTextPreview(section, `#preview-${section}`);
+            break;
+        case '-':
+        case '_':
+            e.preventDefault();
+            state[section].size = Math.max(12, state[section].size - step);
+            const sizeInputMinus = $(`#${section}Size`);
+            if (sizeInputMinus) sizeInputMinus.value = state[section].size;
+            updateTextPreview(section, `#preview-${section}`);
+            break;
+    }
+}
+
+function updatePositionInputs(section) {
+    const xInput = $(`#${section}X`);
+    const yInput = $(`#${section}Y`);
+    if (xInput) xInput.value = state[section].x !== null ? state[section].x : '';
+    if (yInput) yInput.value = state[section].y;
+}
+
+function getSectionName(section) {
+    const names = {
+        primary: '主标题',
+        secondary: '副标题',
+        tertiary: '第三标题',
+        body: '正文'
+    };
+    return names[section] || section;
 }
 
 function setupTextElementInteraction(element, section) {
@@ -1064,14 +1183,30 @@ function setupTextElementInteraction(element, section) {
 }
 
 function addResizeHandles(element) {
-    // Remove existing handles
-    element.querySelectorAll('.resize-handle').forEach(h => h.remove());
+    // Remove existing handles and indicators
+    element.querySelectorAll('.resize-handle, .position-indicator').forEach(h => h.remove());
+
+    // Add corner handles
+    const corners = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    corners.forEach(corner => {
+        const handle = document.createElement('div');
+        handle.className = `resize-handle corner ${corner}`;
+        handle.dataset.handle = corner;
+        element.appendChild(handle);
+    });
 
     // Add font size handle (bottom center)
     const fontHandle = document.createElement('div');
     fontHandle.className = 'resize-handle font-size';
-    fontHandle.title = '拖动调整字号';
+    fontHandle.title = '拖动调整字号 (+/-键也可调整)';
+    fontHandle.dataset.handle = 'font-size';
     element.appendChild(fontHandle);
+
+    // Add position indicator
+    const indicator = document.createElement('div');
+    indicator.className = 'position-indicator';
+    indicator.textContent = 'X: 0, Y: 0';
+    element.appendChild(indicator);
 }
 
 function selectElement(element, section) {
@@ -1144,9 +1279,40 @@ function handleMouseMove(e) {
         newX = Math.max(0, Math.min(newX, state.canvas.width));
         newY = Math.max(0, Math.min(newY, state.canvas.height));
 
+        // Snap to center (with 10px threshold)
+        const centerX = state.canvas.width / 2;
+        const centerY = state.canvas.height / 2;
+        const snapThreshold = 10;
+
+        const hGuide = $('#guide-center-h');
+        const vGuide = $('#guide-center-v');
+
+        // Snap X to center
+        if (Math.abs(newX - centerX) < snapThreshold) {
+            newX = centerX;
+            if (vGuide) vGuide.classList.add('visible');
+        } else {
+            if (vGuide) vGuide.classList.remove('visible');
+        }
+
+        // Snap Y to center
+        if (Math.abs(newY - centerY) < snapThreshold) {
+            newY = centerY;
+            if (hGuide) hGuide.classList.add('visible');
+        } else {
+            if (hGuide) hGuide.classList.remove('visible');
+        }
+
         // Update state
         state[section].x = Math.round(newX);
         state[section].y = Math.round(newY);
+
+        // Update position indicator
+        const element = $(`#preview-${section}`);
+        const indicator = element?.querySelector('.position-indicator');
+        if (indicator) {
+            indicator.textContent = `X: ${state[section].x}, Y: ${state[section].y}`;
+        }
 
         // Update UI inputs
         const xInput = $(`#${section}X`);
@@ -1169,6 +1335,13 @@ function handleMouseMove(e) {
         // Update state
         state[section].size = newSize;
 
+        // Update position indicator to show font size
+        const element = $(`#preview-${section}`);
+        const indicator = element?.querySelector('.position-indicator');
+        if (indicator) {
+            indicator.textContent = `字号: ${newSize}px`;
+        }
+
         // Update UI input
         const sizeInput = $(`#${section}Size`);
         if (sizeInput) sizeInput.value = newSize;
@@ -1185,6 +1358,12 @@ function handleMouseUp(e) {
         if (element) {
             element.classList.remove('dragging');
         }
+
+        // Hide alignment guides
+        const hGuide = $('#guide-center-h');
+        const vGuide = $('#guide-center-v');
+        if (hGuide) hGuide.classList.remove('visible');
+        if (vGuide) vGuide.classList.remove('visible');
 
         dragState = {
             isDragging: false,
@@ -1253,14 +1432,24 @@ function updateTextPreview(sectionKey, elementSelector) {
     // Position
     element.style.top = `${config.y}px`;
 
-    // Handle X position
+    // 设置宽度以支持自动换行
+    const canvasWidth = state.canvas.width;
+    const padding = 50; // 左右边距
+
+    // Handle X position and width
     if (config.x !== null && config.x !== undefined) {
         element.style.left = `${config.x}px`;
         element.style.right = 'auto';
         element.style.transform = 'none';
+        // 当指定了 X 位置时，设置最大宽度为从 X 到画布右边的距离
+        element.style.width = 'auto';
+        element.style.maxWidth = `${canvasWidth - config.x - padding}px`;
     } else {
         element.style.left = '0';
         element.style.right = '0';
+        // 居中模式下，设置固定宽度以支持换行
+        element.style.width = `${canvasWidth}px`;
+        element.style.maxWidth = '100%';
     }
 
     // Font
@@ -1317,6 +1506,12 @@ function updateTextPreview(sectionKey, elementSelector) {
         element.style.padding = `${config.bgBlock.paddingY}px ${config.bgBlock.paddingX}px`;
         element.style.borderRadius = `${config.bgBlock.radius}px`;
         element.style.display = 'inline-block';
+
+        // 如果设置了固定宽度，则应用
+        if (config.bgBlock.width && config.bgBlock.width > 0) {
+            element.style.width = `${config.bgBlock.width}px`;
+            element.style.boxSizing = 'border-box';
+        }
 
         if (config.x === null || config.x === undefined) {
             element.style.left = '50%';
@@ -1475,6 +1670,10 @@ function buildTextConfig(textState) {
             padding_y: textState.bgBlock.paddingY,
             border_radius: textState.bgBlock.radius
         };
+        // 如果设置了自定义宽度，添加 custom_width
+        if (textState.bgBlock.width && textState.bgBlock.width > 0) {
+            config.background_block.custom_width = textState.bgBlock.width;
+        }
     }
 
     return config;
@@ -2035,6 +2234,9 @@ function syncSectionUI(section) {
 
     const bgBlockRadius = $(`#${section}BgBlockRadius`);
     if (bgBlockRadius) bgBlockRadius.value = s.bgBlock?.radius || 8;
+
+    const bgBlockWidth = $(`#${section}BgBlockWidth`);
+    if (bgBlockWidth) bgBlockWidth.value = s.bgBlock?.width || 0;
 }
 
 // ===== History =====
